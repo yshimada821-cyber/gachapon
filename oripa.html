@@ -477,7 +477,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .hand .card:first-child{margin-left:auto;}
 .hand .card:last-child{margin-right:auto;}
 .card{
-  position:relative;flex:0 0 auto;width:min(56vw,40vh,224px);aspect-ratio:5/7;
+  position:relative;flex:0 0 auto;width:min(27vw,24vh,136px);aspect-ratio:5/7;
   perspective:1200px;scroll-snap-align:center;
 }
 .hand.one .card{width:min(70vw,40vh,316px);}
@@ -661,7 +661,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .wl-top .b{display:flex;align-items:baseline;gap:3px;}
 .wl-top b{font-size:16px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
 .wl-top i{font-style:normal;font-size:10px;font-weight:900;color:var(--gold);}
-.bar.sm{height:4px;margin-top:8px;}
+.bar.thin{height:4px;margin-top:8px;}
 .bar i.warn{background:linear-gradient(90deg,#ffd166,#ff9f43);}
 .bar i.over{background:linear-gradient(90deg,#ff7a9e,#ff2d55);}
 .wl-note{margin-top:7px;font-size:10px;font-weight:800;color:var(--ink-mute);line-height:1.5;font-variant-numeric:tabular-nums;}
@@ -1353,7 +1353,7 @@ function budgetBarHTML(bi) {
   else if (bi.level === 'warn') msg = '<div class="bb-note alert">上限まで残り ' + yen(bi.left) + '（80%超）</div>';
   else msg = '<div class="bb-note">上限まで残り ' + yen(bi.left) + '</div>';
   return '<div class="bb-top"><span>今月の課金 <b>' + yen(bi.used) + '</b> / 上限 ' + yen(bi.budget) + '</span><span>' + Math.round(bi.pct) + '%</span></div>' +
-    '<div class="bar sm"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>' + msg;
+    '<div class="bar thin"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>' + msg;
 }
 
 /** 仮想チャージ（1円=1pt）。実際の決済はない。 */
@@ -1436,9 +1436,9 @@ function renderWallet() {
     var need = Math.max(0, price - w.points);
     var cls = bi.level === 'over' ? 'over' : (bi.level === 'warn' ? 'warn' : '');
     var html = '<div class="wl-top"><span>所持ポイント</span><span class="b"><b>' + fmt(w.points) + '</b><i>pt</i></span></div>';
-    html += '<div class="bar sm"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>';
     html += '<div class="wl-note">1口 ' + yen(price) + ' ・ 今月の課金 ' + yen(bi.used) +
       (bi.has ? ' / 上限 ' + yen(bi.budget) : '（予算未設定）') + '</div>';
+    if (bi.has) html += '<div class="bar thin"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>';
     if (need > 0) {
       html += '<div class="wl-note alert">ポイント不足：あと ' + fmt(need) + 'pt。右上の「＋」からチャージできます</div>';
     }
