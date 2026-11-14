@@ -19,8 +19,8 @@
 :root{
   /* オレンジ基調。文字は濃いウォームブラウンでコントラストを確保 */
   --ink:#3b2210;
-  --ink-soft:#6d4526;
-  --ink-mute:#946b41;
+  --ink-soft:#5a3620;
+  --ink-mute:#6d4526;
   --panel:rgba(255,255,255,.62);
   --panel-2:rgba(255,255,255,.80);
   --line:rgba(150,80,20,.16);
@@ -28,8 +28,8 @@
   --green-d:#d95f0e;
   --green-l:#ffb066;
   --red:#e5484d;
-  --chat-top:#ffe8d0;
-  --chat-bot:#ffd9b5;
+  --chat-top:#ffe3c6;
+  --chat-bot:#ffcfa0;
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -118,10 +118,10 @@ input,textarea{font-family:inherit;}
   outline:none;
   transition:border-color .15s, background .15s;
 }
-.inp::placeholder{color:#b08a63;}
+.inp::placeholder{color:#99714a;}
 .inp:focus{border-color:rgba(242,118,31,.62);background:#fffdfa;}
 .inp.code{letter-spacing:.34em;text-transform:uppercase;font-weight:700;font-size:19px;}
-.inp.code::placeholder{letter-spacing:.2em;font-weight:500;font-size:15px;color:#b08a63;}
+.inp.code::placeholder{letter-spacing:.2em;font-weight:500;font-size:15px;color:#99714a;}
 .btn{
   display:block;width:100%;
   margin-top:16px;
@@ -228,7 +228,7 @@ input,textarea{font-family:inherit;}
 /* ---------------- chat ---------------- */
 #scrChat{
   height:var(--vvh,100dvh);
-  background:#ffe8d0;
+  background:#ffcfa0;
   color:#3b2210;
 }
 .chat-shell{
@@ -327,14 +327,14 @@ input,textarea{font-family:inherit;}
 .empty .emptysub{font-size:12px;font-weight:500;opacity:.8;}
 .daydiv{
   text-align:center;margin:16px 0 12px;
-  font-size:11px;color:#8a6440;
+  font-size:11px;color:#6d4526;
 }
 .daydiv span{
   background:rgba(255,255,255,.72);
   padding:3px 12px;border-radius:20px;
 }
 .sys{
-  text-align:center;font-size:11.5px;color:#7a5228;
+  text-align:center;font-size:11.5px;color:#5a3620;
   margin:10px 24px;line-height:1.6;
 }
 .sys span{
@@ -372,7 +372,7 @@ input,textarea{font-family:inherit;}
   border-radius:4px 16px 16px 16px;
 }
 .meta{
-  font-size:10px;color:#8a6440;flex:0 0 auto;
+  font-size:10px;color:#6d4526;flex:0 0 auto;
   padding-bottom:3px;white-space:nowrap;
 }
 .meta.rd{color:#a8410a;font-weight:700;}
@@ -380,14 +380,14 @@ input,textarea{font-family:inherit;}
 .typing{
   display:none;align-items:center;gap:7px;
   padding:4px 16px 6px;
-  font-size:12px;color:#7a5228;
+  font-size:12px;color:#5a3620;
   background:linear-gradient(180deg,var(--chat-bot),var(--chat-bot));
   flex:0 0 auto;
 }
 .typing.on{display:flex;}
 .tdots{display:inline-flex;gap:3px;}
 .tdots i{
-  width:5px;height:5px;border-radius:50%;background:#7a5228;opacity:.45;
+  width:5px;height:5px;border-radius:50%;background:#5a3620;opacity:.45;
   animation:td 1.1s infinite;
 }
 .tdots i:nth-child(2){animation-delay:.16s;}
@@ -411,7 +411,7 @@ input,textarea{font-family:inherit;}
   box-shadow:0 1px 3px rgba(150,80,20,.12);
   -webkit-appearance:none;
 }
-#input::placeholder{color:#b08a63;}
+#input::placeholder{color:#99714a;}
 .send{
   width:46px;height:46px;flex:0 0 auto;
   border:none;border-radius:50%;
@@ -502,7 +502,7 @@ input,textarea{font-family:inherit;}
 .bellbtn.on{background:linear-gradient(150deg,#ffa04d,#e2600f);color:#fff;}
 .bellbtn i{
   position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;
-  background:#ff4d5e;border:1.5px solid #fff;display:none;
+  background:#e5484d;border:1.5px solid #fff;display:none;
 }
 .bellbtn.on i{display:block;}
 
@@ -625,7 +625,7 @@ audio{display:none;}
       ・ルームID <b id="tipCode">------</b><br>
       ・合言葉PIN（設定した場合）<br>
       リンクを送れば、PINの入力だけで入れます。<br>
-      <span style="color:#8fe0b6">※ この画面を閉じるとルームも終了します。</span>
+      <span style="color:#a8410a">※ この画面を閉じるとルームも終了します。</span>
     </div>
   </div>
 </div>
@@ -2105,7 +2105,7 @@ audio{display:none;}
   }
 
   var NOTIF_TEXT = {
-    on:          { label: "ON", desc: "新着メッセージと着信を通知します。", cta: "ON（タップでOFF）", cls: "ok" },
+    on:          { label: "ON", desc: "新着メッセージと着信を通知します。", cta: "通知をOFFにする", cls: "ok" },
     muted:       { label: "OFF（このアプリでOFF）", desc: "通知の許可はありますが、このアプリではOFFにしています。", cta: "ONにする", cls: "warn" },
     default:     { label: "未設定", desc: "まだ通知を許可していません。「通知をONにする」を押すと、ブラウザが確認を表示します。", cta: "通知をONにする", cls: "" },
     denied:      { label: "OFF（ブラウザでブロック中）", desc: "ブラウザ側で通知がブロックされています。下の手順で許可し直してください。", cta: "設定方法を見る", cls: "" },
