@@ -287,7 +287,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 }
 .item-top{display:flex;align-items:center;gap:8px;}
 .i-name{
-  flex:1;min-width:0;padding:9px 10px;border-radius:10px;font-size:14px;font-weight:800;
+  flex:1;min-width:0;padding:9px 10px;border-radius:10px;font-size:16px;font-weight:800;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#fff;outline:none;
 }
 .i-name:focus{border-color:rgba(255,141,180,.55);}
@@ -299,7 +299,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .item-grid label{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .item-grid label > span{font-size:9px;font-weight:800;color:var(--ink-mute);}
 .item-grid select,.item-grid input[type=number]{
-  width:100%;min-width:0;padding:8px 6px;border-radius:9px;font-size:13px;font-weight:800;
+  width:100%;min-width:0;padding:8px 4px;border-radius:9px;font-size:16px;font-weight:800;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#fff;outline:none;
   text-align:center;
 }
@@ -2026,10 +2026,6 @@ function openPack() {
     elStageHit.hidden = false;
     stageState.phase = 'cards';
     sfxAppear();
-    if (stageState.cards.length === 1) {
-      // 1枚引きは少し待ってから自動でめくる（タップでも可）
-      setTimeout(function () { }, 0);
-    }
   }, 900);
 }
 
