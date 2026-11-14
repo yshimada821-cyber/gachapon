@@ -1251,11 +1251,13 @@ audio{display:none;}
 
   function enterChat(){
     setJoinBusy(false);
+    elInput.value = "";
+    autoGrow();
     showScreen("chat");
     updateChatHeader();
     renderMsgs(true);
     setOnline(true);
-    $("#input").focus();
+    try { elInput.focus(); } catch (e) {}
   }
 
   function updateChatHeader(){
@@ -1638,6 +1640,8 @@ audio{display:none;}
     stopLocalMic();
     S.msgs = [];
     S.callState = "idle";
+    elInput.value = "";
+    autoGrow();
 
     if (S.role === "host" && S.peer && !S.peer.destroyed) {
       setWait("相手の参加を待っています…");
@@ -1795,9 +1799,6 @@ audio{display:none;}
     vv.addEventListener("scroll", fit);
     fit();
   }
-
-  window.__talk = S;
-  window.addEventListener("error", function(e){ (window.__talkErr = window.__talkErr || []).push(String(e.message)); });
 
   /* ================= boot ================= */
 
