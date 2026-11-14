@@ -2523,8 +2523,12 @@ audio{display:none;}
       };
       ServiceWorkerRegistration.prototype.getNotifications = function(){ return Promise.resolve([]); };
     }
+    var realDesc = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState");
     Object.defineProperty(document, "visibilityState", {
-      get: function(){ return window.__hidden ? "hidden" : "visible"; },
+      get: function(){
+        if (window.__hidden) return "hidden";
+        return realDesc && realDesc.get ? realDesc.get.call(document) : "visible";
+      },
       configurable: true
     });
     window.__hidden = false;
