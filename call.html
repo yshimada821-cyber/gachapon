@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0a14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="ブラウザだけで無料の音声通話。ルームIDを共有するだけで、iPhoneでもすぐ繋がります。">
+<title>無料音声通話 | ブラウザ通話</title>
+<style>
+:root{
+  --ink:#f6f4ff;
+  --ink-soft:#b7b1d4;
+  --ink-mute:#7b7499;
+  --panel:rgba(255,255,255,.055);
+  --panel-2:rgba(255,255,255,.095);
+  --line:rgba(255,255,255,.10);
+  --indigo:#6366f1;
+  --violet:#a78bfa;
+  --pink:#ff5f9e;
+  --mint:#3ddc97;
+  --red:#ff4d5e;
+  --gold:#ffd76a;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  min-height:100vh;
+  min-height:100dvh;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  color:var(--ink);
+  background:#0b0a14;
+  background-image:
+    radial-gradient(120% 60% at 50% -12%, #2a2350 0%, #171330 42%, #0b0a14 78%),
+    radial-gradient(70% 50% at 100% 100%, rgba(255,95,158,.20), transparent 65%),
+    radial-gradient(70% 50% at 0% 92%, rgba(99,102,241,.22), transparent 65%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overscroll-behavior-y:none;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background:
+    radial-gradient(38% 26% at 18% 8%, rgba(167,139,250,.22), transparent 70%),
+    radial-gradient(34% 24% at 84% 18%, rgba(255,95,158,.14), transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+.wrap{
+  position:relative; z-index:1;
+  max-width:520px; margin:0 auto;
+  min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column;
+  padding:calc(var(--safe-t) + 10px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 16px);
+}
+
+/* ---------- header ---------- */
+.hdr{
+  display:flex; align-items:center; gap:10px;
+  padding:6px 2px 14px;
+}
+.hdr .brand{
+  display:flex; align-items:center; gap:9px;
+  font-size:15px; font-weight:800; letter-spacing:.01em;
+}
+.hdr .dot{
+  width:26px;height:26px;border-radius:9px;
+  background:linear-gradient(140deg,#6366f1,#a78bfa 55%,#ff5f9e);
+  display:grid;place-items:center;font-size:14px;
+  box-shadow:0 6px 18px rgba(99,102,241,.42);
+}
+.hdr .links{margin-left:auto; display:flex; gap:8px;}
+.hdr .lk{
+  width:34px;height:34px;border-radius:12px;
+  display:grid;place-items:center;
+  background:var(--panel); border:1px solid var(--line);
+  color:var(--ink-soft); text-decoration:none; font-size:15px;
+  -webkit-tap-highlight-color:transparent;
+}
+.hdr .lk:active{transform:scale(.94);}
+
+/* ---------- screens ---------- */
+.screen{display:none; flex:1; flex-direction:column; gap:14px; animation:fade .28s ease both;}
+.screen.on{display:flex;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+.hero{padding:10px 4px 4px;}
+.hero h1{
+  margin:0 0 8px; font-size:26px; line-height:1.28; font-weight:900; letter-spacing:.01em;
+  background:linear-gradient(100deg,#ffffff 8%,#cfc7ff 46%,#ffc2d9 92%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero p{margin:0; font-size:13.5px; line-height:1.7; color:var(--ink-soft);}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:16px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.card h2{
+  margin:0 0 12px; font-size:13px; font-weight:800; color:var(--ink-soft);
+  letter-spacing:.04em; text-transform:uppercase;
+}
+
+.btn{
+  -webkit-appearance:none; appearance:none; border:0; cursor:pointer;
+  width:100%; min-height:58px; border-radius:18px;
+  font-family:inherit; font-size:16.5px; font-weight:800; color:#fff;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6 55%,#a855f7);
+  box-shadow:0 10px 26px rgba(99,102,241,.38), inset 0 1px 0 rgba(255,255,255,.22);
+  transition:transform .12s ease, box-shadow .12s ease, opacity .12s;
+  -webkit-tap-highlight-color:transparent;
+  padding:0 18px;
+}
+.btn:active{transform:scale(.975); box-shadow:0 6px 16px rgba(99,102,241,.30);}
+.btn[disabled]{opacity:.5; box-shadow:none;}
+.btn.ghost{
+  background:var(--panel-2); border:1px solid var(--line);
+  box-shadow:none; color:var(--ink); font-weight:700;
+}
+.btn.ghost:active{background:rgba(255,255,255,.14);}
+.btn.pink{background:linear-gradient(135deg,#ff5f9e,#f43f7d 60%,#e0356b); box-shadow:0 10px 26px rgba(255,95,158,.34);}
+.btn.sm{min-height:46px; font-size:14.5px; border-radius:14px;}
+.row{display:flex; gap:10px;}
+.row > *{flex:1;}
+
+/* code input */
+.code-wrap{position:relative;}
+.code-input{
+  width:100%; height:64px; border-radius:18px;
+  background:rgba(10,9,20,.55);
+  border:1px solid rgba(255,255,255,.14);
+  color:var(--ink);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:26px; font-weight:800; letter-spacing:.34em; text-indent:.34em;
+  text-align:center; text-transform:uppercase;
+  outline:none; transition:border-color .15s, box-shadow .15s;
+}
+.code-input::placeholder{color:rgba(183,177,212,.32); letter-spacing:.3em; text-indent:.3em;}
+.code-input:focus{border-color:rgba(167,139,250,.85); box-shadow:0 0 0 4px rgba(139,92,246,.20);}
+
+.field-label{font-size:12.5px; color:var(--ink-mute); margin:0 0 8px; font-weight:700;}
+.hint{font-size:12px; color:var(--ink-mute); line-height:1.65; margin:10px 2px 0;}
+
+/* host waiting */
+.room-box{text-align:center; padding:6px 0 2px;}
+.room-label{font-size:12px; letter-spacing:.12em; color:var(--ink-mute); font-weight:800; text-transform:uppercase;}
+.room-code{
+  margin:10px 0 4px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:42px; font-weight:900; letter-spacing:.16em;
+  background:linear-gradient(100deg,#fff,#cfc7ff 55%,#ffc2d9);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.room-url{
+  font-size:12px; color:var(--ink-soft); word-break:break-all;
+  background:rgba(10,9,20,.45); border:1px solid var(--line);
+  border-radius:14px; padding:10px 12px; margin:12px 0 14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; line-height:1.55;
+  text-align:left; user-select:all; -webkit-user-select:all;
+}
+.wait{
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  font-size:13.5px; color:var(--ink-soft); font-weight:700;
+  padding:12px 0 2px;
+}
+.pulse{width:9px;height:9px;border-radius:50%;background:var(--gold); box-shadow:0 0 0 0 rgba(255,215,106,.5); animation:pulse 1.8s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,215,106,.5);}70%{box-shadow:0 0 0 12px rgba(255,215,106,0);}100%{box-shadow:0 0 0 0 rgba(255,215,106,0);}}
+.pulse.ok{background:var(--mint);}
+.pulse.warn{background:var(--red);}
+
+/* ---------- call screen ---------- */
+.call-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 0 0;}
+.avatar{
+  width:118px;height:118px;border-radius:50%;
+  display:grid;place-items:center;font-size:44px;
+  background:linear-gradient(150deg,rgba(139,92,246,.34),rgba(255,95,158,.24));
+  border:1px solid rgba(255,255,255,.16);
+  position:relative;
+  box-shadow:0 18px 46px rgba(76,42,168,.42), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.avatar::after{
+  content:""; position:absolute; inset:-10px; border-radius:50%;
+  border:1px solid rgba(167,139,250,.32);
+  animation:ring 2.6s ease-out infinite;
+}
+.avatar.live::after{animation-duration:2s; border-color:rgba(61,220,151,.42);}
+@keyframes ring{0%{transform:scale(.94);opacity:.85;}70%{transform:scale(1.18);opacity:0;}100%{opacity:0;}}
+.avatar.muted{background:linear-gradient(150deg,rgba(255,77,94,.28),rgba(255,95,158,.18));}
+.call-status{font-size:14px; font-weight:800; color:var(--ink-soft); margin-top:18px; display:flex; align-items:center; gap:8px;}
+.call-name{font-size:12.5px; color:var(--ink-mute); margin-top:4px; font-family:ui-monospace,Menlo,monospace; letter-spacing:.1em;}
+.timer{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:46px; font-weight:800; letter-spacing:.04em; margin:6px 0 2px;
+  font-variant-numeric:tabular-nums;
+  color:#fff;
+  text-shadow:0 8px 30px rgba(139,92,246,.45);
+}
+.timer.dim{color:rgba(255,255,255,.34); text-shadow:none;}
+.controls{display:flex; gap:26px; align-items:center; justify-content:center; margin-top:auto; padding:26px 0 calc(var(--safe-b) + 14px);}
+.ctl{
+  -webkit-appearance:none; appearance:none; border:0; cursor:pointer;
+  width:78px;height:78px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center; gap:2px;
+  font-family:inherit; font-size:24px; color:#fff;
+  background:var(--panel-2); border:1px solid var(--line);
+  transition:transform .12s ease, background .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ctl span{font-size:10.5px; font-weight:800; color:var(--ink-soft); letter-spacing:.02em;}
+.ctl:active{transform:scale(.93);}
+.ctl.on{background:rgba(255,215,106,.18); border-color:rgba(255,215,106,.45);}
+.ctl.hang{background:linear-gradient(150deg,#ff4d5e,#e0356b); border-color:rgba(255,255,255,.16); box-shadow:0 12px 30px rgba(224,53,107,.42);}
+.ctl.hang span{color:rgba(255,255,255,.85);}
+
+/* notice / permission */
+.notice{
+  display:none; gap:10px; align-items:flex-start;
+  background:rgba(255,77,94,.12); border:1px solid rgba(255,77,94,.34);
+  border-radius:18px; padding:14px; font-size:13px; line-height:1.7; color:#ffdbe0;
+}
+.notice.on{display:flex;}
+.notice b{display:block; font-size:13.5px; margin-bottom:4px; color:#fff;}
+.notice ul{margin:6px 0 0; padding-left:18px;}
+.notice li{margin:3px 0;}
+.notice .ico{font-size:18px; line-height:1.2;}
+
+/* toast */
+.toast{
+  position:fixed; left:50%; bottom:calc(var(--safe-b) + 96px);
+  transform:translate(-50%,14px);
+  background:rgba(20,17,38,.94); border:1px solid rgba(255,255,255,.16);
+  color:#fff; font-size:13px; font-weight:700;
+  padding:11px 18px; border-radius:14px;
+  opacity:0; pointer-events:none; transition:opacity .22s, transform .22s;
+  z-index:50; max-width:88vw; text-align:center;
+  box-shadow:0 14px 34px rgba(0,0,0,.5);
+}
+.toast.on{opacity:1; transform:translate(-50%,0);}
+
+.foot{
+  margin-top:14px; padding:4px 2px 0;
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  font-size:11.5px; color:var(--ink-mute);
+}
+.foot a{color:var(--ink-soft); text-decoration:none;}
+.foot i{font-style:normal; opacity:.4;}
+
+/* spinner */
+.spin{
+  width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.22); border-top-color:#fff;
+  animation:spin .8s linear infinite; flex:none;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<audio id="remoteAudio" autoplay playsinline></audio>
+
+<div class="wrap">
+  <header class="hdr">
+    <div class="brand"><span class="dot">📞</span>無料音声通話</div>
+    <div class="links">
+      <a class="lk" href="./index.html" aria-label="ガチャへ">🎰</a>
+      <a class="lk" href="./oripa.html" aria-label="オリパへ">🎴</a>
+    </div>
+  </header>
+
+  <!-- ============ HOME ============ -->
+  <section class="screen on" id="scrHome">
+    <div class="hero">
+      <h1>ルームIDだけで、<br>すぐ繋がる無料通話。</h1>
+      <p>ブラウザどうしが直接つながる通話です。アプリのインストールも登録もいりません。同じルームIDを入れた2人だけが通話できます。</p>
+    </div>
+
+    <div class="card">
+      <h2>ルームを作る（待つ側）</h2>
+      <button type="button" class="btn" id="btnHost">📞 通話ルームを作る</button>
+      <button type="button" class="btn ghost sm" id="btnQuickHost" style="margin-top:10px;display:none;">もう一度つくる</button>
+      <p class="hint">発行された6桁のIDか共有URLを、通話したい相手に送ってください。</p>
+    </div>
+
+    <div class="card">
+      <h2>ルームに入る（かける側）</h2>
+      <p class="field-label" id="joinLabel">相手から届いたルームID</p>
+      <div class="code-wrap" id="joinFieldWrap">
+        <input class="code-input" id="codeInput" type="text" inputmode="latin" autocapitalize="characters"
+               autocomplete="off" autocorrect="off" spellcheck="false" maxlength="6" placeholder="ABC123" aria-label="ルームID">
+      </div>
+      <button type="button" class="btn pink" id="btnJoin" style="margin-top:12px;">通話に参加</button>
+      <p class="hint" id="joinHint">URLで招待された場合は、この画面を開くだけでIDが入ります。</p>
+    </div>
+
+    <div class="notice" id="permNotice">
+      <span class="ico">🎙️</span>
+      <div id="permNoticeBody">
+        <b>マイクを使えませんでした</b>
+        <ul>
+          <li>iPhone: アドレスバーの「aA」→「Webサイトの設定」→ マイク を「許可」</li>
+          <li>設定アプリ → アプリ → Safari → マイク をオン</li>
+          <li>Chrome: URL左のアイコン → マイクを許可 → 再読み込み</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="foot">
+      <a href="./index.html">🎰 ガチャ</a><i>/</i><a href="./oripa.html">🎴 オリパ</a>
+    </div>
+  </section>
+
+  <!-- ============ HOST WAITING ============ -->
+  <section class="screen" id="scrHost">
+    <div class="card">
+      <div class="room-box">
+        <div class="room-label">ルームID</div>
+        <div class="room-code" id="roomCode">······</div>
+      </div>
+      <div class="room-url" id="roomUrl">—</div>
+      <div class="row">
+        <button type="button" class="btn ghost sm" id="btnCopy">📋 URLをコピー</button>
+        <button type="button" class="btn sm" id="btnShare">📤 共有する</button>
+      </div>
+      <div class="wait" id="hostWait"><span class="pulse"></span><span id="hostWaitText">相手の参加を待っています…</span></div>
+      <p class="hint">相手がこのURLを開いて「通話に参加」を押すと、自動で繋がります。この画面は開いたままにしてください。</p>
+      <button type="button" class="btn ghost sm" id="btnHostCancel" style="margin-top:14px;">待つのをやめる</button>
+    </div>
+    <div class="foot"><a href="./index.html">🎰 ガチャ</a><i>/</i><a href="./oripa.html">🎴 オリパ</a></div>
+  </section>
+
+  <!-- ============ IN CALL ============ -->
+  <section class="screen" id="scrCall">
+    <div class="call-wrap">
+      <div class="avatar" id="avatar">🎙️</div>
+      <div class="call-status" id="callStatus"><span class="spin"></span><span id="callStatusText">接続しています…</span></div>
+      <div class="call-name" id="callRoom">ROOM ·······</div>
+      <div class="timer dim" id="timer">00:00</div>
+    </div>
+    <div class="controls">
+      <button type="button" class="ctl" id="btnMute" aria-pressed="false">🎙️<span>ミュート</span></button>
+      <button type="button" class="ctl hang" id="btnHang">🔴<span>通話を切る</span></button>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onerror="window.__peerjsFailed=true"></script>
+<script>
+(function(){
+  "use strict";
+
+  var $ = function(s){ return document.querySelector(s); };
+  var ROOM_PREFIX = "gacha-call-";
+  var CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 紛らわしい I,O,0,1 を除外
+  var CODE_LEN = 6;
+
+  var ICE = {
+    iceServers: [
+      { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"] },
+      { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+    ],
+    sdpSemantics: "unified-plan"
+  };
+
+  var S = {
+    role: null,          // 'host' | 'guest'
+    peer: null,
+    call: null,
+    localStream: null,
+    roomCode: null,
+    startedAt: 0,
+    timerId: null,
+    muted: false,
+    audioCtx: null,
+    audioSrc: null,
+    busy: false,
+    joined: false
+  };
+
+  var elAudio = $("#remoteAudio");
+  var elToast = $("#toast");
+  var toastTimer = null;
+
+  /* ---------------- helpers ---------------- */
+
+  function showScreen(name){
+    ["scrHome", "scrHost", "scrCall"].forEach(function(id){
+      var n = $(("#" + id));
+      n.classList.toggle("on", id === "scr" + name);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function toast(msg, ms){
+    elToast.textContent = msg;
+    elToast.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ elToast.classList.remove("on"); }, ms || 2600);
+  }
+
+  function makeCode(){
+    var out = "", buf = new Uint32Array(CODE_LEN);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(buf);
+      for (var i = 0; i < CODE_LEN; i++) out += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length];
+    } else {
+      for (var j = 0; j < CODE_LEN; j++) out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+    }
+    return out;
+  }
+
+  function normalizeCode(v){
+    return String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CODE_LEN);
+  }
+
+  function shareUrl(code){
+    return location.origin + location.pathname + "?room=" + code;
+  }
+
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var p = function(n){ return (n < 10 ? "0" : "") + n; };
+    return h > 0 ? (h + ":" + p(m) + ":" + p(s)) : (p(m) + ":" + p(s));
+  }
+
+  /* ---------------- iOS audio unlock ---------------- */
+
+  function unlockAudio(){
+    // 1) 無音バッファで AudioContext をユーザー操作内で起こす
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) {
+        if (!S.audioCtx) S.audioCtx = new AC();
+        if (S.audioCtx.state === "suspended") S.audioCtx.resume();
+        var b = S.audioCtx.createBuffer(1, 1, 22050);
+        var src = S.audioCtx.createBufferSource();
+        src.buffer = b;
+        src.connect(S.audioCtx.destination);
+        src.start(0);
+      }
+    } catch (e) { /* 音声コンテキストが無い環境でも続行 */ }
+
+    // 2) <audio> 要素自体を操作内で「再生可能」にする
+    try {
+      if (!elAudio.srcObject) elAudio.srcObject = new MediaStream();
+      elAudio.muted = false;
+      elAudio.volume = 1;
+      var p = elAudio.play();
+      if (p && typeof p.catch === "function") p.catch(function(){});
+    } catch (e2) { /* noop */ }
+  }
+
+  function playRemote(stream){
+    // まずは <audio> で再生（unlockAudio 済みなので iOS でも鳴る）
+    try {
+      elAudio.srcObject = stream;
+      elAudio.muted = false;
+      elAudio.volume = 1;
+      var p = elAudio.play();
+      if (p && typeof p.then === "function") {
+        p.then(function(){ /* ok */ }).catch(function(){ routeThroughWebAudio(stream); });
+      }
+    } catch (e) {
+      routeThroughWebAudio(stream);
+    }
+  }
+
+  function routeThroughWebAudio(stream){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!S.audioCtx) S.audioCtx = new AC();
+      if (S.audioCtx.state === "suspended") S.audioCtx.resume();
+      if (S.audioSrc) { try { S.audioSrc.disconnect(); } catch (e) {} }
+      S.audioSrc = S.audioCtx.createMediaStreamSource(stream);
+      S.audioSrc.connect(S.audioCtx.destination);
+    } catch (e) {
+      toast("音声を再生できません。画面をタップしてみてください");
+    }
+  }
+
+  // 通話中にタップされたら、音声の再生を再試行（iOSの取りこぼし対策）
+  document.addEventListener("touchstart", function(){
+    if (S.call && elAudio.srcObject && elAudio.paused) {
+      try { elAudio.play(); } catch (e) {}
+    }
+    if (S.audioCtx && S.audioCtx.state === "suspended") { try { S.audioCtx.resume(); } catch (e) {} }
+  }, { passive: true });
+
+  /* ---------------- microphone ---------------- */
+
+  function ensureMic(){
+    return new Promise(function(resolve, reject){
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        reject(new Error("unsupported"));
+        return;
+      }
+      if (S.localStream && S.localStream.getAudioTracks().some(function(t){ return t.readyState === "live"; })) {
+        resolve(S.localStream);
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false
+      }).then(function(stream){
+        S.localStream = stream;
+        var track = stream.getAudioTracks()[0];
+        if (track) {
+          track.onended = function(){
+            if (S.call) toast("マイクが切断されました");
+          };
+        }
+        resolve(stream);
+      }).catch(reject);
+    });
+  }
+
+  function showMicError(err){
+    var box = $("#permNotice");
+    var body = $("#permNoticeBody");
+    var name = err && (err.name || err.message || "");
+    var extra = "";
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      extra = "ブラウザでマイクがブロックされています。下の手順で許可してから、もう一度ボタンを押してください。";
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      extra = "マイクが見つかりません。マイク付きのイヤホンなどを接続してください。";
+    } else if (name === "unsupported") {
+      extra = "このブラウザはマイク取得に対応していません。Safari または Chrome で開いてください。";
+    } else if (name === "NotReadableError") {
+      extra = "マイクが他のアプリで使用中です。他のアプリを閉じてから試してください。";
+    } else {
+      extra = "マイクを開始できませんでした（" + name + "）。HTTPSのページで開いているか確認してください。";
+    }
+    body.innerHTML =
+      '<b>マイクを使えませんでした</b>' + extra +
+      '<ul>' +
+      '<li>iPhone: アドレスバーの「aA」→「Webサイトの設定」→ マイク を「許可」</li>' +
+      '<li>設定アプリ → アプリ → Safari → マイク をオン</li>' +
+      '<li>Chrome: URL左のアイコン → マイクを許可 → 再読み込み</li>' +
+      '</ul>';
+    box.classList.add("on");
+    showScreen("Home");
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  /* ---------------- timer ---------------- */
+
+  function startTimer(){
+    S.startedAt = Date.now();
+    $("#timer").classList.remove("dim");
+    tickTimer();
+    clearInterval(S.timerId);
+    S.timerId = setInterval(tickTimer, 500);
+  }
+  function tickTimer(){
+    var sec = (Date.now() - S.startedAt) / 1000;
+    $("#timer").textContent = fmtTime(sec);
+  }
+  function stopTimer(){
+    clearInterval(S.timerId);
+    S.timerId = null;
+  }
+
+  function setCallStatus(text, live){
+    $("#callStatusText").textContent = text;
+    var sp = $("#callStatus").querySelector(".spin");
+    if (sp) sp.style.display = live ? "none" : "";
+    $("#avatar").classList.toggle("live", !!live);
+    if (!live) $("#timer").classList.add("dim");
+  }
+
+  /* ---------------- cleanup ---------------- */
+
+  function stopLocalTracks(){
+    if (S.localStream) {
+      S.localStream.getTracks().forEach(function(t){ try { t.stop(); } catch (e) {} });
+      S.localStream = null;
+    }
+  }
+
+  function closeCallKeepPeer(){
+    if (S.call) { try { S.call.close(); } catch (e) {} S.call = null; }
+    stopTimer();
+    S.startedAt = 0;
+    S.joined = false;
+  }
+
+  function fullReset(){
+    closeCallKeepPeer();
+    if (S.peer) { try { S.peer.destroy(); } catch (e) {} S.peer = null; }
+    stopLocalTracks();
+    if (S.audioSrc) { try { S.audioSrc.disconnect(); } catch (e) {} S.audioSrc = null; }
+    try { elAudio.srcObject = null; } catch (e) {}
+    S.role = null;
+    S.roomCode = null;
+    S.muted = false;
+    S.busy = false;
+    $("#timer").textContent = "00:00";
+    $("#timer").classList.add("dim");
+    $("#avatar").classList.remove("muted", "live");
+    $("#btnMute").classList.remove("on");
+    $("#btnMute").setAttribute("aria-pressed", "false");
+  }
+
+  /* ---------------- host ---------------- */
+
+  function renderHost(){
+    var code = S.roomCode || "······";
+    $("#roomCode").textContent = code.split("").join("");
+    $("#roomUrl").textContent = S.roomCode ? shareUrl(S.roomCode) : "—";
+  }
+
+  function hostWait(text, tone){
+    $("#hostWaitText").textContent = text || "相手の参加を待っています…";
+    var p = $("#hostWait").querySelector(".pulse");
+    if (p) {
+      p.classList.remove("ok", "warn");
+      if (tone === "ok") p.classList.add("ok");
+      if (tone === "warn") p.classList.add("warn");
+    }
+  }
+
+  function startHost(){
+    if (S.busy) return;
+    S.busy = true;
+    unlockAudio();
+    $("#permNotice").classList.remove("on");
+    $("#btnHost").disabled = true;
+    $("#btnJoin").disabled = true;
+
+    ensureMic().then(function(){
+      S.role = "host";
+      S.roomCode = makeCode();
+      renderHost();
+      hostWait("サーバーに接続しています…");
+      showScreen("Host");
+      connectHostPeer(S.roomCode, 0);
+    }).catch(function(err){
+      S.busy = false;
+      $("#btnHost").disabled = false;
+      $("#btnJoin").disabled = false;
+      showMicError(err);
+    });
+  }
+
+  function connectHostPeer(code, attempt){
+    if (!window.Peer) { peerLibError(); return; }
+    var peer;
+    try {
+      peer = new Peer(ROOM_PREFIX + code, { config: ICE, debug: 1 });
+    } catch (e) {
+      peerInitError(e);
+      return;
+    }
+    S.peer = peer;
+
+    peer.on("open", function(){
+      S.busy = false;
+      $("#btnHost").disabled = false;
+      $("#btnJoin").disabled = false;
+      hostWait("相手の参加を待っています…");
+      renderHost();
+    });
+
+    peer.on("call", function(call){
+      if (S.call) { try { call.close(); } catch (e) {} return; }
+      S.call = call;
+      S.joined = false;
+      $("#callRoom").textContent = "ROOM " + (S.roomCode || "");
+      showScreen("Call");
+      setCallStatus("接続しています…", false);
+      try {
+        call.answer(S.localStream);
+      } catch (e) {
+        setCallStatus("応答に失敗しました", false);
+        return;
+      }
+      bindCall(call);
+    });
+
+    peer.on("error", function(err){
+      var type = err && err.type;
+      if (type === "unavailable-id" && attempt < 4) {
+        try { peer.destroy(); } catch (e) {}
+        S.roomCode = makeCode();
+        renderHost();
+        hostWait("ルームIDを作り直しています…");
+        connectHostPeer(S.roomCode, attempt + 1);
+        return;
+      }
+      handlePeerError(err);
+    });
+
+    peer.on("disconnected", function(){
+      hostWait("再接続しています…", "warn");
+      try { peer.reconnect(); } catch (e) {}
+    });
+  }
+
+  /* ---------------- guest ---------------- */
+
+  function joinRoom(){
+    if (S.busy) return;
+    var code = normalizeCode($("#codeInput").value);
+    if (code.length !== CODE_LEN) {
+      toast("ルームIDは6文字です");
+      $("#codeInput").focus();
+      return;
+    }
+    S.busy = true;
+    unlockAudio();
+    $("#permNotice").classList.remove("on");
+    $("#btnHost").disabled = true;
+    $("#btnJoin").disabled = true;
+
+    ensureMic().then(function(){
+      S.role = "guest";
+      S.roomCode = code;
+      $("#callRoom").textContent = "ROOM " + code;
+      showScreen("Call");
+      setCallStatus("接続しています…", false);
+      connectGuestPeer(code);
+    }).catch(function(err){
+      S.busy = false;
+      $("#btnHost").disabled = false;
+      $("#btnJoin").disabled = false;
+      showMicError(err);
+    });
+  }
+
+  function connectGuestPeer(code){
+    if (!window.Peer) { peerLibError(); return; }
+    var peer;
+    try {
+      peer = new Peer({ config: ICE, debug: 1 });
+    } catch (e) {
+      peerInitError(e);
+      return;
+    }
+    S.peer = peer;
+
+    peer.on("open", function(){
+      var call;
+      try {
+        call = peer.call(ROOM_PREFIX + code, S.localStream);
+      } catch (e) {
+        setCallStatus("発信できませんでした", false);
+        return;
+      }
+      if (!call) {
+        setCallStatus("発信できませんでした", false);
+        return;
+      }
+      S.call = call;
+      S.joined = false;
+      bindCall(call);
+      setCallStatus("呼び出しています…", false);
+    });
+
+    peer.on("error", function(err){ handlePeerError(err); });
+
+    peer.on("disconnected", function(){
+      if (S.joined) setCallStatus("再接続しています…", false);
+      try { peer.reconnect(); } catch (e) {}
+    });
+  }
+
+  /* ---------------- common call binding ---------------- */
+
+  function bindCall(call){
+    call.on("stream", function(remote){
+      playRemote(remote);
+      if (!S.joined) {
+        S.joined = true;
+        S.busy = false;
+        $("#btnHost").disabled = false;
+        $("#btnJoin").disabled = false;
+        setCallStatus("通話中", true);
+        startTimer();
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+      }
+    });
+
+    call.on("close", function(){ onRemoteClosed(); });
+    call.on("error", function(err){
+      toast("通話エラー: " + (err && (err.message || err.type) || "unknown"));
+    });
+  }
+
+  function onRemoteClosed(){
+    if (S.role === "host" && S.peer && !S.peer.destroyed) {
+      // ホストは待機画面に戻って再参加を受け付ける
+      closeCallKeepPeer();
+      $("#avatar").classList.remove("muted", "live");
+      $("#timer").textContent = "00:00";
+      showScreen("Host");
+      hostWait("相手が退出しました。また待っています…", "warn");
+      toast("相手が通話を終了しました");
+    } else {
+      fullReset();
+      $("#codeInput").value = "";
+      showScreen("Home");
+      toast("相手が通話を終了しました");
+    }
+  }
+
+  function handlePeerError(err){
+    var type = err && (err.type || "");
+    var msg = (err && err.message) || "";
+    S.busy = false;
+    $("#btnHost").disabled = false;
+    $("#btnJoin").disabled = false;
+
+    if (type === "peer-unavailable") {
+      fullReset();
+      showScreen("Home");
+      toast("そのルームが見つかりません。IDを確認するか、相手がルームを作っているか確かめてください", 4200);
+      return;
+    }
+    if (type === "network" || type === "server-error" || type === "socket-error" || type === "socket-closed") {
+      if (S.joined) {
+        setCallStatus("接続が切れました", false);
+        toast("通信サーバーとの接続が切れました。通話を切って、もう一度お試しください", 4200);
+      } else {
+        fullReset();
+        showScreen("Home");
+        toast("通話サーバーに接続できませんでした。少し待ってからもう一度お試しください", 4200);
+      }
+      return;
+    }
+    if (type === "browser-incompatible") {
+      fullReset();
+      showScreen("Home");
+      toast("このブラウザは通話に対応していません。Safari か Chrome でお試しください", 4200);
+      return;
+    }
+    if (type === "unavailable-id") {
+      toast("ルームIDが使用中です。もう一度作り直してください", 3600);
+      fullReset();
+      showScreen("Home");
+      return;
+    }
+    if (type === "webrtc" || type === "negotiation-failed") {
+      toast("接続の確立に失敗しました（ネットワーク制限の可能性）。Wi-Fi/4Gを変えて再度お試しください", 4600);
+      return;
+    }
+    if (msg) toast("エラー: " + msg, 3600);
+  }
+
+  function peerLibError(){
+    S.busy = false;
+    $("#btnHost").disabled = false;
+    $("#btnJoin").disabled = false;
+    var body = $("#permNoticeBody");
+    body.innerHTML =
+      '<b>通話ライブラリを読み込めませんでした</b>' +
+      'ネットワーク（広告ブロックや機内モード）を確認して、ページを再読み込みしてください。';
+    $("#permNotice").classList.add("on");
+    showScreen("Home");
+  }
+
+  function peerInitError(e){
+    S.busy = false;
+    $("#btnHost").disabled = false;
+    $("#btnJoin").disabled = false;
+    toast("通話を開始できませんでした: " + ((e && e.message) || "unknown"), 3600);
+  }
+
+  /* ---------------- hang up / cancel ---------------- */
+
+  function hangUp(){
+    var wasJoined = S.joined;
+    var role = S.role;
+    fullReset();
+    $("#codeInput").value = "";
+    $("#callRoom").textContent = "ROOM ·······";
+    setCallStatus("接続しています…", false);
+    showScreen("Home");
+    if (wasJoined || role) toast("通話を終了しました");
+  }
+
+  function cancelHost(){
+    fullReset();
+    showScreen("Home");
+    toast("ルームを閉じました");
+  }
+
+  /* ---------------- copy / share ---------------- */
+
+  function copyUrl(){
+    var url = S.roomCode ? shareUrl(S.roomCode) : "";
+    if (!url) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function(){
+        toast("URLをコピーしました");
+      }).catch(function(){ legacyCopy(url); });
+    } else {
+      legacyCopy(url);
+    }
+  }
+
+  function legacyCopy(text){
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok ? "URLをコピーしました" : "コピーできませんでした。長押しで選択してください");
+    } catch (e) {
+      toast("コピーできませんでした。URLを長押しで選択してください");
+    }
+  }
+
+  function shareRoom(){
+    if (!S.roomCode) return;
+    var url = shareUrl(S.roomCode);
+    var data = {
+      title: "無料音声通話",
+      text: "ルームID " + S.roomCode + " で通話しよう（タップで参加）",
+      url: url
+    };
+    if (navigator.share) {
+      navigator.share(data).catch(function(err){
+        if (err && err.name === "AbortError") return;
+        copyUrl();
+      });
+    } else {
+      copyUrl();
+    }
+  }
+
+  /* ---------------- mute ---------------- */
+
+  function toggleMute(){
+    S.muted = !S.muted;
+    if (S.localStream) {
+      S.localStream.getAudioTracks().forEach(function(t){ t.enabled = !S.muted; });
+    }
+    $("#btnMute").classList.toggle("on", S.muted);
+    $("#btnMute").setAttribute("aria-pressed", S.muted ? "true" : "false");
+    $("#avatar").classList.toggle("muted", S.muted);
+    toast(S.muted ? "ミュート中（相手に声は届きません）" : "ミュートを解除しました", 1800);
+  }
+
+  /* ---------------- events ---------------- */
+
+  $("#btnHost").addEventListener("click", startHost);
+  $("#btnJoin").addEventListener("click", joinRoom);
+  $("#btnCopy").addEventListener("click", copyUrl);
+  $("#btnShare").addEventListener("click", shareRoom);
+  $("#btnHostCancel").addEventListener("click", cancelHost);
+  $("#btnMute").addEventListener("click", toggleMute);
+  $("#btnHang").addEventListener("click", hangUp);
+
+  $("#codeInput").addEventListener("input", function(){
+    var v = normalizeCode(this.value);
+    if (this.value !== v) this.value = v;
+    $("#permNotice").classList.remove("on");
+  });
+  $("#codeInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter") { e.preventDefault(); joinRoom(); }
+  });
+
+  window.addEventListener("pagehide", function(){
+    if (S.call) { try { S.call.close(); } catch (e) {} }
+    if (S.peer) { try { S.peer.destroy(); } catch (e) {} }
+  });
+
+  /* ---------------- boot ---------------- */
+
+  (function boot(){
+    // 招待URL: ?room=XXXXXX
+    var q = new URLSearchParams(location.search);
+    var room = normalizeCode(q.get("room") || q.get("r") || "");
+    if (room.length === CODE_LEN) {
+      $("#codeInput").value = room;
+      $("#joinLabel").textContent = "招待されたルームID";
+      $("#joinHint").textContent = "下の「通話に参加」を押すと、マイクの許可を確認してから繋がります。";
+      $("#btnJoin").textContent = "通話に参加（" + room + "）";
+      $("#btnJoin").style.marginTop = "12px";
+      // 招待カードを目立たせる
+      var card = $("#btnJoin").closest(".card");
+      if (card) {
+        card.style.borderColor = "rgba(255,95,158,.45)";
+        card.style.boxShadow = "0 14px 34px rgba(224,53,107,.18)";
+      }
+      var hero = document.querySelector(".hero p");
+      if (hero) hero.textContent = "招待リンクから来ましたね。下の「通話に参加」を押すだけで、ルーム「" + room + "」に繋がります。";
+    }
+
+    // ブラウザがWebRTC非対応なら案内
+    var ok = !!(window.RTCPeerConnection || window.webkitRTCPeerConnection);
+    if (!ok) {
+      $("#permNoticeBody").innerHTML =
+        '<b>このブラウザは音声通話に対応していません</b>' +
+        'Safari または Chrome の最新版で開いてください。';
+      $("#permNotice").classList.add("on");
+    }
+    if (!window.isSecureContext && location.protocol !== "file:") {
+      // HTTPSでないとマイクが使えない
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>
