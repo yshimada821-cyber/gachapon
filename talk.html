@@ -148,6 +148,11 @@ input,textarea{font-family:inherit;}
   display:none;
 }
 .hint.on{display:block;}
+.join-status{
+  display:none;margin:12px 2px 0;text-align:center;
+  font-size:12.5px;color:#8fe0b6;line-height:1.6;
+}
+.join-status.on{display:block;}
 
 /* ---------------- room ---------------- */
 #scrRoom{overflow-y:auto;}
@@ -503,6 +508,7 @@ audio{display:none;}
       <input class="inp" id="joinPin" inputmode="numeric" maxlength="4" placeholder="4桁" autocomplete="off">
 
       <button class="btn" id="btnJoin">参加する</button>
+      <p class="join-status" id="joinStatus">ルームに接続しています…</p>
     </div>
 
     <p class="foot">同じルームに入れるのは2人まで。<br>3人目は「満室」としてブロックされます。</p>
@@ -655,6 +661,7 @@ audio{display:none;}
     guestAttempt: 0,
     lastTypingSent: 0,
     joinSettled: false,
+    openTimeout: null,
     helloTimeout: null
   };
 
@@ -1110,6 +1117,14 @@ audio{display:none;}
 
   /* ================= guest ================= */
 
+  function setJoinBusy(on, text){
+    var b = $("#btnJoin"), c = $("#btnCreate");
+    b.disabled = !!on;
+    c.disabled = !!on;
+    b.textContent = on ? (text || "接続しています…") : "参加する";
+    $("#joinStatus").classList.toggle("on", !!on);
+  }
+
   function joinRoom(){
     if (!window.Peer) { toast("通信ライブラリを読み込めませんでした。再読み込みしてください。"); return; }
     var code = normalizeCode($("#codeInput").value);
@@ -1128,6 +1143,7 @@ audio{display:none;}
     S.code = code;
     S.msgs = [];
     S.joinSettled = false;
+    setJoinBusy(true, "接続しています…");
 
     var peer;
     try {
@@ -1138,11 +1154,16 @@ audio{display:none;}
     }
     S.peer = peer;
 
+    clearTimeout(S.openTimeout);
+    S.openTimeout = setTimeout(function(){
+      if (!S.joinSettled) failJoin("📡", "ルームに接続できません", "通信環境かルームIDを確認して、もう一度お試しください。");
+    }, 18000);
+
     peer.on("open", function(){
       var conn = peer.connect(hostPeerId(code), { reliable: true });
       S.conn = conn;
-
       conn.on("open", function(){
+        setJoinBusy(true, "入室を確認しています…");
         try { conn.send({ type: "hello", name: S.wireName, pin: pin }); } catch (e) {}
         clearTimeout(S.helloTimeout);
         S.helloTimeout = setTimeout(function(){
@@ -1156,6 +1177,7 @@ audio{display:none;}
         if (d.type === "welcome") {
           S.joinSettled = true;
           clearTimeout(S.helloTimeout);
+          clearTimeout(S.openTimeout);
           S.hostId = conn.peer;
           S.peerName = String(d.name || "あいて").slice(0, 12);
           enterChat();
@@ -1182,6 +1204,7 @@ audio{display:none;}
 
       conn.on("close", function(){
         if (S.joinSettled) onPeerGone("相手との接続が切れました");
+        else if (!S.joinSettled) setJoinBusy(false);
       });
 
       conn.on("error", function(){});
@@ -1216,6 +1239,9 @@ audio{display:none;}
   }
 
   function failJoin(icon, title, body){
+    setJoinBusy(false);
+    clearTimeout(S.openTimeout);
+    clearTimeout(S.helloTimeout);
     if (S.conn) { try { S.conn.close(); } catch (e) {} S.conn = null; }
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} S.peer = null; }
     fullScreen(icon, title, body);
@@ -1224,6 +1250,7 @@ audio{display:none;}
   /* ================= chat ================= */
 
   function enterChat(){
+    setJoinBusy(false);
     showScreen("chat");
     updateChatHeader();
     renderMsgs(true);
@@ -1768,6 +1795,9 @@ audio{display:none;}
     vv.addEventListener("scroll", fit);
     fit();
   }
+
+  window.__talk = S;
+  window.addEventListener("error", function(e){ (window.__talkErr = window.__talkErr || []).push(String(e.message)); });
 
   /* ================= boot ================= */
 
