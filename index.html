@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff3e9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<title>カスタムガチャ</title>
+<style>
+:root{
+  --ink:#2c2a35;
+  --ink-soft:#6f6a7c;
+  --ink-mute:#9a94a6;
+  --line:rgba(40,30,60,.08);
+  --card:#ffffff;
+  --pink:#ff5f8d;
+  --pink-d:#ef3f77;
+  --purple:#8b5cf6;
+  --indigo:#6366f1;
+  --gold:#f7b731;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --mw:min(72vw,268px,36vh);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  min-height:100vh;
+  min-height:100dvh;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  color:var(--ink);
+  background:#fff8f0;
+  background-image:
+    radial-gradient(130% 70% at 50% -10%, #ffffff 0%, #fff4ea 38%, #ffe9f1 66%, #e9f1ff 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overscroll-behavior-y:contain;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  color-scheme:light;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+[hidden]{display:none !important;}
+button{touch-action:manipulation;-webkit-appearance:none;appearance:none;}
+input,textarea{-webkit-user-select:text;user-select:text;}
+input{touch-action:manipulation;}
+
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:calc(6px + var(--safe-t)) 16px 6px;
+  background:rgba(255,255,255,.78);
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(0,0,0,.05);
+}
+.brand{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:800;letter-spacing:.01em;}
+.brand .dice{font-size:19px;line-height:1;filter:drop-shadow(0 2px 3px rgba(240,71,155,.28));}
+.icon-btn{
+  width:40px;height:40px;border:none;border-radius:13px;
+  background:#fff;box-shadow:0 2px 8px rgba(90,70,120,.10);
+  font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease;
+}
+.icon-btn:active{transform:scale(.92);}
+.icon-btn.off{opacity:.55;}
+
+main{flex:1;padding:0 14px calc(78px + var(--safe-b));}
+
+/* ---------- views ---------- */
+.view{display:none;}
+.view.on{display:block;animation:fade .25s ease both;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+/* ---------- set chips ---------- */
+.set-strip{
+  display:flex;gap:8px;overflow-x:auto;padding:8px 2px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+}
+.set-strip::-webkit-scrollbar{display:none;}
+.chip{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+  height:33px;padding:0 13px;border-radius:999px;
+  background:#fff;border:1.5px solid rgba(255,255,255,.9);
+  font-size:12.5px;font-weight:700;color:var(--ink-soft);
+  box-shadow:0 2px 8px rgba(90,70,120,.08);
+  scroll-snap-align:center;
+  transition:transform .12s ease;
+  max-width:62vw;
+}
+.chip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip:active{transform:scale(.96);}
+.chip.on{
+  background:linear-gradient(135deg,#ff8fae,#ff5f8d 55%,#f0479b);
+  border-color:transparent;color:#fff;
+  box-shadow:0 6px 16px rgba(240,71,155,.32);
+}
+
+/* ---------- machine ---------- */
+.machine-wrap{display:flex;justify-content:center;padding:2px 0 0;}
+.machine{position:relative;width:var(--mw);}
+
+/* dome */
+.dome{
+  position:relative;width:100%;aspect-ratio:1/0.98;
+  border-radius:50%;
+  overflow:hidden;z-index:2;
+  border:3px solid rgba(255,255,255,.92);
+  background:
+    radial-gradient(70% 55% at 32% 14%, rgba(255,255,255,.95), rgba(255,255,255,0) 62%),
+    radial-gradient(120% 110% at 50% 120%, rgba(160,205,245,.55), rgba(225,240,255,.32) 55%, rgba(255,255,255,.55) 100%);
+  box-shadow:
+    0 12px 26px rgba(120,140,180,.26),
+    inset 0 -18px 34px rgba(120,170,220,.24),
+    inset 0 16px 28px rgba(255,255,255,.9);
+}
+.dome-caps{position:absolute;inset:0;}
+.ball{position:absolute;width:15.5%;transform:translate(-50%,-50%);}
+.ball-in{position:relative;width:100%;aspect-ratio:1;transform:rotate(var(--r,0deg));}
+.half{display:block;position:absolute;left:0;width:100%;height:50%;}
+.half.top{
+  top:0;
+  border-radius:50% 50% 0 0 / 100% 100% 0 0;
+  background:
+    radial-gradient(60% 60% at 34% 72%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%),
+    linear-gradient(160deg, var(--c,#94a3b8) 0%, var(--c,#94a3b8) 60%, rgba(0,0,0,.16) 100%);
+  background-blend-mode:normal,normal;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.18);
+}
+.half.top::after{
+  content:"";position:absolute;left:26%;top:16%;width:30%;height:22%;
+  border-radius:50%;background:rgba(255,255,255,.85);transform:rotate(-18deg);
+  filter:blur(.4px);
+}
+.half.bottom{
+  bottom:0;
+  border-radius:0 0 50% 50% / 0 0 100% 100%;
+  background:
+    radial-gradient(70% 70% at 34% 26%, #ffffff, #eef2f8 62%, #dbe3ee 100%);
+  box-shadow:inset 0 2px 3px rgba(90,110,140,.25), inset 0 -3px 5px rgba(150,170,200,.35);
+}
+.r-R .half.top{background-image:radial-gradient(60% 60% at 34% 72%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%),linear-gradient(160deg,#60a5fa,#3b82f6 60%,rgba(0,0,0,.18));}
+.dome .r-N .half.top{--c:#94a3b8;}
+.rainbow .half.top,.r-UR .half.top{
+  background-image:
+    radial-gradient(60% 60% at 34% 72%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%),
+    conic-gradient(from 200deg,#ff5f8d,#ffd166,#7ee787,#5ec8ff,#b18cff,#ff5f8d);
+}
+.dome-gloss{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:3;
+  background:
+    linear-gradient(196deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,0) 26%, rgba(255,255,255,0) 62%, rgba(255,255,255,.38) 100%);
+}
+.dome-gloss::after{
+  content:"";position:absolute;left:16%;top:9%;width:26%;height:16%;
+  border-radius:50%;background:rgba(255,255,255,.95);
+  transform:rotate(-32deg);filter:blur(1px);opacity:.9;
+}
+.dome-rim{
+  position:absolute;left:0;right:0;bottom:-6px;height:16px;z-index:4;
+  border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(214,226,240,.75));
+  box-shadow:0 3px 8px rgba(120,140,170,.28);
+}
+.shaking .ball-in{animation:jig .15s infinite alternate ease-in-out;}
+@keyframes jig{
+  from{transform:rotate(var(--r,0deg)) translateY(0);}
+  to{transform:rotate(calc(var(--r,0deg) + 7deg)) translateY(-6%);}
+}
+
+/* body */
+.machine-body{
+  position:relative;z-index:1;margin-top:-9%;
+  padding:20px 12px 10px;
+  border-radius:26px;
+  border:2px solid rgba(255,255,255,.42);
+  background:linear-gradient(180deg,#ff9d8c 0%,#f96a80 26%,#e8435f 62%,#c62c4c 100%);
+  box-shadow:
+    0 16px 30px rgba(200,70,100,.30),
+    inset 0 2px 0 rgba(255,255,255,.72),
+    inset 0 -12px 22px rgba(120,20,50,.32);
+}
+.plate{
+  display:flex;width:-webkit-fit-content;width:fit-content;margin:0 auto 6px;
+  align-items:center;justify-content:center;
+  height:18px;padding:0 11px;border-radius:6px;
+  background:linear-gradient(180deg,#fff6dd,#f7d98a);
+  color:#9a4b12;font-size:9.5px;font-weight:900;letter-spacing:.28em;
+  box-shadow:0 1px 0 rgba(255,255,255,.8), inset 0 0 0 1px rgba(180,110,30,.22), 0 3px 6px rgba(120,20,50,.25);
+}
+.body-row{display:flex;align-items:center;gap:12px;}
+.handle{
+  flex:0 0 auto;width:66px;height:66px;padding:0;border:none;background:transparent;border-radius:50%;
+  display:block;
+  filter:drop-shadow(0 5px 7px rgba(110,10,35,.4));
+  transition:transform .82s cubic-bezier(.32,.72,.2,1);
+  transform:rotate(0deg);
+  will-change:transform;
+}
+.handle svg{display:block;width:100%;height:100%;}
+.handle:active{filter:drop-shadow(0 3px 5px rgba(110,10,35,.45)) brightness(1.03);}
+.coin{
+  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  height:56px;border-radius:13px;
+  background:linear-gradient(180deg,#ffb9b0,#f0798a 40%,#d94f68);
+  box-shadow:inset 0 2px 3px rgba(255,255,255,.55), inset 0 -4px 10px rgba(120,20,50,.35), 0 2px 4px rgba(110,10,35,.25);
+}
+.coin-face{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 10px;border-radius:9px;
+  background:linear-gradient(180deg,#2b1c24,#4d2f3a);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.4);
+}
+.coin-val{color:#ffd977;font-size:12px;font-weight:900;letter-spacing:.06em;}
+.coin-line{width:22px;height:3px;border-radius:2px;background:#0d0608;box-shadow:inset 0 1px 2px #000,0 1px 0 rgba(255,255,255,.3);}
+.tray{
+  position:relative;margin-top:10px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#6a414c 0%,#331c25 22%,#160c11 100%);
+  box-shadow:
+    inset 0 6px 12px rgba(0,0,0,.85),
+    inset 0 -2px 0 rgba(255,255,255,.08),
+    0 1px 0 rgba(255,255,255,.35);
+  overflow:hidden;
+}
+.tray::after{
+  content:"TAKE";font-size:8.5px;font-weight:800;letter-spacing:.3em;color:rgba(255,255,255,.30);
+}
+.tray-lip{
+  position:absolute;left:8px;right:8px;top:3px;height:5px;border-radius:3px;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0));
+}
+
+/* falling capsule */
+.drop-layer{position:absolute;inset:0;pointer-events:none;z-index:9;}
+.falling{position:absolute;left:50%;top:0;transform-origin:50% 50%;will-change:transform;}
+.falling .half{box-shadow:0 4px 10px rgba(60,30,50,.25);}
+.pop-ring{
+  position:absolute;left:50%;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.95);pointer-events:none;
+  box-shadow:0 0 20px rgba(255,255,255,.9), 0 0 40px rgba(255,209,102,.8);
+}
+
+/* ---------- mode + spin ---------- */
+.mode-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.seg{
+  flex:1 1 auto;display:flex;gap:2px;padding:4px;border-radius:999px;
+  background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 3px 10px rgba(90,70,120,.09);
+}
+.seg button{
+  flex:1;height:30px;border:none;border-radius:999px;background:transparent;
+  font-size:12px;font-weight:800;color:var(--ink-mute);transition:all .18s ease;
+}
+.seg button.on{
+  background:linear-gradient(135deg,#a78bfa,#6366f1);color:#fff;
+  box-shadow:0 3px 9px rgba(99,102,241,.35);
+}
+.ghost-btn{
+  flex:0 0 auto;height:38px;padding:0 13px;border-radius:999px;border:1.5px solid rgba(139,92,246,.28);
+  background:#fff;color:#6d4bc4;font-size:12px;font-weight:800;
+  box-shadow:0 3px 8px rgba(90,70,120,.08);
+}
+.ghost-btn:active{transform:scale(.95);}
+.spin-btn{
+  display:block;width:100%;height:60px;margin-top:10px;border:none;border-radius:19px;
+  color:#fff;font-size:20px;font-weight:900;letter-spacing:.10em;
+  background:linear-gradient(135deg,#ff8fae 0%,#ff5f8d 45%,#ef3f9b 100%);
+  box-shadow:
+    0 12px 24px rgba(240,71,155,.36),
+    inset 0 2px 0 rgba(255,255,255,.5),
+    inset 0 -4px 0 rgba(160,20,90,.32);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.spin-btn:active{transform:scale(.974);box-shadow:0 6px 14px rgba(240,71,155,.36),inset 0 2px 0 rgba(255,255,255,.5);}
+.spin-btn:disabled{
+  background:linear-gradient(135deg,#e6e2ec,#d5d0de);color:#a29cb0;
+  box-shadow:none;
+}
+.hint{
+  margin:8px 2px 0;text-align:center;font-size:11.5px;line-height:1.5;color:var(--ink-mute);
+  min-height:16px;
+}
+.hint b{color:var(--ink-soft);}
+
+/* ---------- cards / edit ---------- */
+.card{
+  background:var(--card);border-radius:20px;padding:14px;margin-bottom:12px;
+  box-shadow:0 6px 20px rgba(90,70,120,.08);
+  border:1px solid rgba(255,255,255,.9);
+}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;}
+.card-h h2{margin:0;font-size:13.5px;font-weight:800;color:#3a3644;display:flex;align-items:center;gap:6px;}
+.card-h .sub{font-size:11px;color:var(--ink-mute);font-weight:700;}
+.section-title{
+  margin:18px 2px 8px;font-size:12px;font-weight:800;color:#8b8498;letter-spacing:.06em;
+}
+
+.set-row{
+  display:flex;align-items:center;gap:6px;padding:6px;border-radius:16px;margin-bottom:6px;
+  background:#faf8fc;
+}
+.set-row.on{background:linear-gradient(135deg,#fff1f6,#ffe9f2);box-shadow:inset 0 0 0 1.5px rgba(255,95,141,.35);}
+.set-main{
+  flex:1 1 auto;display:flex;align-items:center;gap:8px;min-width:0;
+  border:none;background:transparent;padding:8px 6px;text-align:left;border-radius:12px;
+}
+.set-main .e{font-size:18px;line-height:1;}
+.set-main .n{flex:1;min-width:0;font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.set-main .c{font-size:10.5px;font-weight:800;color:var(--ink-mute);background:#fff;border-radius:999px;padding:3px 8px;}
+.set-ic{
+  flex:0 0 auto;width:38px;height:38px;border:none;border-radius:12px;background:#fff;
+  font-size:15px;box-shadow:0 2px 6px rgba(90,70,120,.08);color:#8a8494;
+}
+.set-ic:active{transform:scale(.92);}
+.set-ic.danger{color:#e04a5f;}
+
+.item-row{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px;border:none;border-radius:15px;background:#faf8fc;margin-bottom:7px;
+}
+.item-row:active{background:#f3eff8;}
+.mini{
+  flex:0 0 auto;position:relative;width:28px;height:28px;border-radius:50%;overflow:hidden;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.1);
+  background:#fff;
+}
+.mini .half{height:50%;}
+.mini .half.top{background:var(--c,#94a3b8);}
+.mini .half.bottom{background:linear-gradient(180deg,#fff,#e8eef6);}
+.item-main{flex:1 1 auto;min-width:0;}
+.item-name{font-size:13.5px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.item-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;}
+.item-meta .w{font-size:10.5px;color:var(--ink-mute);font-weight:700;}
+.item-meta .p{font-size:10.5px;color:#8b7bd8;font-weight:800;}
+.item-meta .s{font-size:10.5px;color:#e0683f;font-weight:800;}
+.item-meta .s.zero{color:#b9b3c4;}
+.badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:26px;height:18px;padding:0 6px;border-radius:6px;
+  font-size:10px;font-weight:900;letter-spacing:.03em;color:#fff;
+  background:var(--rc,#94a3b8);
+}
+.badge.b-UR{background:linear-gradient(120deg,#ff5f8d,#ffd166 35%,#7ee787 60%,#5ec8ff 80%,#b18cff);}
+.rb-rainbow{background:linear-gradient(120deg,#ff5f8d,#ffd166 35%,#7ee787 60%,#5ec8ff 80%,#b18cff) !important;}
+.chev{flex:0 0 auto;color:#c9c3d4;font-size:15px;}
+
+.empty{
+  text-align:center;padding:18px 10px;color:var(--ink-mute);font-size:12.5px;line-height:1.7;
+}
+.empty .big{font-size:26px;display:block;margin-bottom:6px;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:50px;padding:0 18px;border:none;border-radius:16px;
+  font-size:15px;font-weight:800;
+}
+.btn.primary{
+  color:#fff;background:linear-gradient(135deg,#ff8fae,#ff5f8d 50%,#ef3f9b);
+  box-shadow:0 8px 18px rgba(240,71,155,.32), inset 0 2px 0 rgba(255,255,255,.45);
+}
+.btn.primary:active{transform:scale(.975);}
+.btn.ghost{background:#f4f1f8;color:#6f6a7c;}
+.btn.ghost:active{transform:scale(.975);}
+.btn.danger{background:#fff0f2;color:#d93a55;}
+.btn.block{display:flex;width:100%;}
+.btn.sm{height:40px;border-radius:13px;font-size:13px;padding:0 14px;}
+.btn:disabled{opacity:.5;}
+
+/* ---------- history ---------- */
+.hist-sum{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.hist-item{
+  display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line);
+}
+.hist-item:last-child{border-bottom:none;}
+.hist-time{flex:0 0 auto;width:64px;font-size:10.5px;color:var(--ink-mute);font-weight:700;font-variant-numeric:tabular-nums;}
+.hist-name{flex:1 1 auto;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-set{display:block;font-size:10px;color:var(--ink-mute);font-weight:600;margin-top:1px;}
+.big-count{font-size:26px;font-weight:900;color:#e94a7b;font-variant-numeric:tabular-nums;}
+
+/* ---------- tab bar ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;gap:2px;padding:6px 10px calc(6px + var(--safe-b));
+  background:rgba(255,255,255,.88);
+  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);
+  border-top:1px solid rgba(0,0,0,.06);
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border:none;background:transparent;padding:5px 0;border-radius:14px;
+  color:#a09aac;font-size:10px;font-weight:800;
+  transition:color .15s ease,background .15s ease;
+}
+.tab .ti{font-size:19px;line-height:1.15;transition:transform .18s ease;}
+.tab.on{color:#e94a7b;background:rgba(255,95,141,.09);}
+.tab.on .ti{transform:translateY(-1px) scale(1.08);}
+
+/* ---------- modal base ---------- */
+.modal{position:fixed;inset:0;z-index:70;visibility:hidden;pointer-events:none;}
+.modal.on{visibility:visible;pointer-events:auto;}
+.backdrop{
+  position:absolute;inset:0;background:rgba(34,22,44,.44);
+  -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+  opacity:0;transition:opacity .26s ease;
+}
+.modal.on .backdrop{opacity:1;}
+
+/* result modal */
+.result-card-pos{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;}
+.result-card{
+  position:relative;width:100%;max-width:330px;
+  border-radius:26px;padding:22px 20px 18px;text-align:center;
+  background:linear-gradient(180deg,#ffffff,#fff8fb);
+  box-shadow:0 26px 60px rgba(60,20,60,.32);
+  transform:scale(.86) translateY(10px);opacity:0;
+  transition:transform .34s cubic-bezier(.2,1.15,.35,1), opacity .24s ease;
+}
+.modal.on .result-card{transform:scale(1) translateY(0);opacity:1;}
+.result-rarity{
+  position:absolute;left:50%;top:-15px;transform:translateX(-50%);
+  min-width:64px;height:30px;padding:0 14px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;letter-spacing:.08em;color:#fff;
+  background:var(--rc,#94a3b8);
+  box-shadow:0 6px 14px rgba(60,20,60,.22), inset 0 2px 0 rgba(255,255,255,.4);
+  white-space:nowrap;
+}
+.result-label{margin:18px 0 0;font-size:12px;font-weight:900;letter-spacing:.22em;color:var(--ink-mute);}
+.result-name{
+  margin:10px 0 0;font-size:24px;font-weight:900;line-height:1.3;word-break:break-word;
+  color:#2b2435;
+}
+.result-name.rare{
+  background:linear-gradient(120deg,#ff5f8d,#f7b731 30%,#7ee787 58%,#5ec8ff 78%,#b18cff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 6px rgba(255,95,141,.28));
+}
+.result-set{margin:7px 0 0;font-size:11.5px;color:var(--ink-mute);font-weight:700;}
+.result-ball{
+  width:104px;height:104px;margin:6px auto 0;position:relative;
+  filter:drop-shadow(0 10px 16px rgba(60,30,60,.22));
+}
+.result-card.glow{box-shadow:0 26px 60px rgba(60,20,60,.32), 0 0 0 3px rgba(255,209,102,.5), 0 0 46px rgba(255,209,102,.55);}
+.result-card.glow-rainbow{box-shadow:0 26px 60px rgba(60,20,60,.32), 0 0 0 3px rgba(255,95,141,.4), 0 0 52px rgba(177,140,255,.6);}
+.result-actions{display:flex;flex-direction:column;gap:8px;margin-top:18px;}
+
+/* bottom sheet */
+.sheet-pos{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;}
+.sheet{
+  position:relative;width:100%;max-height:90vh;max-height:90dvh;
+  display:flex;flex-direction:column;
+  background:#fff;border-radius:26px 26px 0 0;
+  padding:8px 18px calc(16px + var(--safe-b));
+  box-shadow:0 -12px 40px rgba(60,20,60,.24);
+  transform:translateY(102%);
+  transition:transform .34s cubic-bezier(.2,.9,.25,1);
+}
+.modal.on .sheet{transform:translateY(0);}
+.grabber{width:38px;height:4.5px;border-radius:3px;background:#e4dfea;margin:6px auto 10px;flex:0 0 auto;}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sheet-h h3{margin:0;font-size:15px;font-weight:900;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;font-weight:800;color:#8b8498;margin-bottom:6px;letter-spacing:.04em;}
+.note{font-size:10.5px;color:var(--ink-mute);font-weight:600;margin-top:6px;line-height:1.6;}
+.input{
+  width:100%;height:48px;padding:0 14px;border-radius:14px;border:1.5px solid #ebe6f1;
+  background:#faf9fc;font-size:15px;font-weight:700;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.input:focus{border-color:#ffb3c8;background:#fff;box-shadow:0 0 0 4px rgba(255,95,141,.10);}
+.rar-row{display:flex;gap:6px;}
+.rar-btn{
+  flex:1;height:44px;border-radius:13px;border:1.5px solid #ebe6f1;background:#faf9fc;
+  font-size:13px;font-weight:900;color:var(--ink-mute);position:relative;
+  transition:all .16s ease;
+}
+.rar-btn.on{color:#fff;border-color:transparent;background:var(--rc,#94a3b8);box-shadow:0 4px 12px rgba(60,20,60,.18);}
+.rar-btn.b-UR.on{background:linear-gradient(120deg,#ff5f8d,#ffd166 35%,#7ee787 60%,#5ec8ff 80%,#b18cff);}
+.stepper{display:flex;align-items:center;gap:10px;}
+.step-btn{
+  width:46px;height:46px;flex:0 0 auto;border-radius:14px;border:none;
+  background:#f4f1f8;color:#6f6a7c;font-size:20px;font-weight:800;line-height:1;
+}
+.step-btn:active{transform:scale(.94);}
+.step-input{
+  flex:1 1 auto;height:46px;text-align:center;border-radius:14px;border:1.5px solid #ebe6f1;
+  background:#faf9fc;font-size:17px;font-weight:900;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.step-input::-webkit-outer-spin-button,.step-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;margin-top:12px;
+  background:linear-gradient(90deg,#ffb3c8,#c4b5fd);outline:none;
+}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 8px rgba(60,20,60,.28), inset 0 0 0 2px #ff8fae;
+}
+.slider::-moz-range-thumb{width:26px;height:26px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(60,20,60,.28);}
+.prob-pill{
+  display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  padding:6px 12px;border-radius:999px;background:#f4f0ff;color:#6d4bc4;
+  font-size:11.5px;font-weight:900;
+}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}
+.emoji-btn{
+  aspect-ratio:1;border-radius:12px;border:1.5px solid #ebe6f1;background:#faf9fc;
+  font-size:17px;display:flex;align-items:center;justify-content:center;
+}
+.emoji-btn.on{border-color:#ff9cbb;background:#fff0f5;box-shadow:0 0 0 3px rgba(255,95,141,.12);}
+.sheet-actions{display:flex;gap:8px;margin-top:6px;padding-top:10px;}
+.sheet-actions .btn{flex:1;}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(96px + var(--safe-b));z-index:90;
+  transform:translate(-50%,14px);opacity:0;pointer-events:none;
+  max-width:86vw;padding:11px 18px;border-radius:999px;
+  background:rgba(44,36,52,.94);color:#fff;font-size:12.5px;font-weight:700;
+  box-shadow:0 10px 24px rgba(40,20,50,.28);
+  transition:opacity .22s ease,transform .22s ease;
+  text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* confetti */
+.confetti{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden;}
+.spark{
+  position:absolute;font-size:14px;pointer-events:none;will-change:transform,opacity;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .shaking .ball-in{animation:none;}
+  .view.on{animation:none;}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><span class="dice">🎲</span>カスタムガチャ</div>
+    <button class="icon-btn" id="soundBtn" aria-label="サウンドのオン・オフ">🔊</button>
+  </header>
+
+  <main>
+    <!-- ===== ガチャ ===== -->
+    <section class="view on" id="view-play">
+      <div class="set-strip" id="setStrip"></div>
+
+      <div class="machine-wrap">
+        <div class="machine" id="machine">
+          <div class="dome" id="dome">
+            <div class="dome-caps" id="domeCaps"></div>
+            <div class="dome-gloss"></div>
+            <div class="dome-rim"></div>
+          </div>
+          <div class="machine-body">
+            <div class="plate">GACHA</div>
+            <div class="body-row">
+              <button class="handle" id="handle" aria-label="ハンドルを回す">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="knobG" cx="34%" cy="26%" r="76%">
+                      <stop offset="0%" stop-color="#fffdf6"/>
+                      <stop offset="46%" stop-color="#ffe9a8"/>
+                      <stop offset="100%" stop-color="#e2a13c"/>
+                    </radialGradient>
+                    <linearGradient id="barG" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#ffffff"/>
+                      <stop offset="100%" stop-color="#f0dcae"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="45" fill="url(#knobG)" stroke="#b8791e" stroke-width="3"/>
+                  <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"/>
+                  <rect x="17" y="43" width="66" height="14" rx="7" fill="url(#barG)" stroke="rgba(150,100,20,.35)" stroke-width="2"/>
+                  <rect x="43" y="17" width="14" height="66" rx="7" fill="url(#barG)" stroke="rgba(150,100,20,.35)" stroke-width="2"/>
+                  <circle cx="50" cy="50" r="8.5" fill="#fff" stroke="rgba(150,100,20,.35)" stroke-width="2"/>
+                </svg>
+              </button>
+              <div class="coin">
+                <div class="coin-face">
+                  <span class="coin-val">¥100</span>
+                  <span class="coin-line"></span>
+                </div>
+              </div>
+            </div>
+            <div class="tray" id="tray"><span class="tray-lip"></span></div>
+          </div>
+          <div class="drop-layer" id="dropLayer"></div>
+        </div>
+      </div>
+
+      <div class="mode-row">
+        <div class="seg" id="modeSeg">
+          <button type="button" data-mode="infinite">∞ 無限モード</button>
+          <button type="button" data-mode="stock">📦 在庫あり</button>
+        </div>
+        <button type="button" class="ghost-btn" id="resetStockBtn" hidden>リセット</button>
+      </div>
+
+      <button type="button" class="spin-btn" id="spinBtn">回す！</button>
+      <p class="hint" id="spinHint"></p>
+    </section>
+
+    <!-- ===== 中身 ===== -->
+    <section class="view" id="view-edit">
+      <div class="section-title">ガチャセット</div>
+      <div class="card">
+        <div id="setList"></div>
+        <button type="button" class="btn ghost block sm" id="addSetBtn" style="margin-top:6px;">＋ 新しいセットを作る</button>
+      </div>
+
+      <div class="section-title">モード</div>
+      <div class="card">
+        <div class="card-h"><h2>🎚 出かた</h2><span class="sub" id="modeSub"></span></div>
+        <div class="seg" id="modeSeg2">
+          <button type="button" data-mode="infinite">∞ 無限モード</button>
+          <button type="button" data-mode="stock">📦 在庫あり</button>
+        </div>
+        <div class="note" id="modeNote" style="margin-top:10px;"></div>
+        <button type="button" class="btn ghost block sm" id="resetStockBtn2" style="margin-top:10px;" hidden>在庫をリセット</button>
+      </div>
+
+      <div class="section-title">中身（<span id="itemCount">0</span>個）</div>
+      <div class="card">
+        <div id="itemList"></div>
+        <button type="button" class="btn primary block sm" id="addItemBtn" style="margin-top:8px;">＋ アイテムを追加</button>
+      </div>
+
+      <p class="note" style="text-align:center;margin:2px 0 18px;">🔊 マナーモード（サイレントスイッチ）中は効果音が鳴りません</p>
+    </section>
+
+    <!-- ===== 履歴 ===== -->
+    <section class="view" id="view-history">
+      <div class="card" style="margin-top:14px;">
+        <div class="card-h"><h2>📜 これまでの記録</h2><span class="sub" id="histCount"></span></div>
+        <div style="display:flex;align-items:flex-end;gap:6px;margin:2px 0 10px;">
+          <span class="big-count" id="histTotal">0</span><span style="font-size:12px;font-weight:800;color:#8b8498;padding-bottom:5px;">回まわしました</span>
+        </div>
+        <div class="hist-sum" id="histSum"></div>
+        <div id="histList"></div>
+        <button type="button" class="btn ghost block sm" id="clearHistBtn" style="margin-top:14px;">履歴を消す</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button type="button" class="tab on" data-view="play"><span class="ti">🎰</span>ガチャ</button>
+    <button type="button" class="tab" data-view="edit"><span class="ti">✏️</span>中身</button>
+    <button type="button" class="tab" data-view="history"><span class="ti">📜</span>履歴</button>
+  </nav>
+
+  <!-- ===== 結果 ===== -->
+  <div class="modal" id="resultModal">
+    <div class="backdrop" data-close="1"></div>
+    <div class="result-card-pos">
+      <div class="result-card" id="resultCard">
+        <div class="result-rarity" id="resRarity">N</div>
+        <div class="result-ball" id="resBall"><span class="half top"></span><span class="half bottom"></span></div>
+        <p class="result-label" id="resLabel">でた！</p>
+        <div class="result-name" id="resName">アイテム</div>
+        <div class="result-set" id="resSet">セット</div>
+        <div class="result-actions">
+          <button type="button" class="btn primary block" id="againBtn">もう1回回す</button>
+          <button type="button" class="btn ghost block" id="closeResultBtn">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== アイテム編集 ===== -->
+  <div class="modal" id="itemModal">
+    <div class="backdrop" data-close="1"></div>
+    <div class="sheet-pos">
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-h">
+          <h3 id="itemSheetTitle">アイテムを追加</h3>
+          <button type="button" class="icon-btn" data-close="1" aria-label="閉じる" style="width:34px;height:34px;font-size:14px;box-shadow:none;background:#f4f1f8;">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <label for="itemName">名前</label>
+            <input class="input" id="itemName" type="text" maxlength="40" placeholder="例：ラーメン" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label>レア度・カプセルの色</label>
+            <div class="rar-row" id="rarRow"></div>
+          </div>
+          <div class="field">
+            <label for="itemWeight">出やすさ（重み）</label>
+            <div class="stepper">
+              <button type="button" class="step-btn" data-step="weight" data-dir="-1">−</button>
+              <input class="step-input" id="itemWeight" type="number" min="1" max="99" inputmode="numeric" value="10">
+              <button type="button" class="step-btn" data-step="weight" data-dir="1">＋</button>
+            </div>
+            <input class="slider" id="itemWeightRange" type="range" min="1" max="50" value="10">
+            <div class="prob-pill" id="itemProb">いまの確率：--%</div>
+          </div>
+          <div class="field">
+            <label for="itemStock">在庫数</label>
+            <div class="stepper">
+              <button type="button" class="step-btn" data-step="stock" data-dir="-1">−</button>
+              <input class="step-input" id="itemStock" type="number" min="0" max="99" inputmode="numeric" value="3">
+              <button type="button" class="step-btn" data-step="stock" data-dir="1">＋</button>
+            </div>
+            <div class="note">在庫ありモードのときに使います。引くと1個減ります。</div>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button type="button" class="btn danger" id="delItemBtn">削除</button>
+          <button type="button" class="btn primary" id="saveItemBtn">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== セット編集 ===== -->
+  <div class="modal" id="setModal">
+    <div class="backdrop" data-close="1"></div>
+    <div class="sheet-pos">
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="sheet-h">
+          <h3 id="setSheetTitle">新しいセット</h3>
+          <button type="button" class="icon-btn" data-close="1" aria-label="閉じる" style="width:34px;height:34px;font-size:14px;box-shadow:none;background:#f4f1f8;">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <label for="setName">セットの名前</label>
+            <input class="input" id="setName" type="text" maxlength="24" placeholder="例：週末のごほうびガチャ" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>アイコン</label>
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button type="button" class="btn primary block" id="saveSetBtn">作成する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 確認 ===== -->
+  <div class="modal" id="confirmModal">
+    <div class="backdrop" data-close="1"></div>
+    <div class="result-card-pos">
+      <div class="result-card" style="padding:26px 20px 18px;">
+        <div class="result-label" style="margin:0;">かくにん</div>
+        <div class="result-name" id="confirmMsg" style="font-size:16px;font-weight:800;margin-top:10px;line-height:1.5;">削除しますか？</div>
+        <div class="result-actions" style="flex-direction:row;">
+          <button type="button" class="btn ghost" id="confirmNo" style="flex:1;">やめる</button>
+          <button type="button" class="btn primary" id="confirmYes" style="flex:1;">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="confetti" id="confetti"></div>
+<div class="toast" id="toast"></div>
+<script>
+/* =========================================================
+   カスタムガチャ  gachapon.html
+   1ファイル完結（外部CDN・外部ファイルなし）
+   ========================================================= */
+(function () {
+  'use strict';
+
+  var STORE = 'gachapon.v1';
+  var MAX_HISTORY = 200;
+
+  var RAR = {
+    N:   { label: 'N',   c: '#94a3b8', name: 'ノーマル' },
+    R:   { label: 'R',   c: '#3b82f6', name: 'レア' },
+    SR:  { label: 'SR',  c: '#a855f7', name: 'スーパーレア' },
+    SSR: { label: 'SSR', c: '#f59e0b', name: '超レア' },
+    UR:  { label: '虹',  c: '#ff4fa3', name: 'レジェンド' }
+  };
+  var RAR_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
+  var EMOJIS = ['🍱', '🎁', '🎲', '🍰', '☕️', '🍺', '🎮', '🎵', '✈️', '🏖️', '💪', '📚', '🎬', '🐱', '💖', '🌟', '👗', '🧹', '🎯', '🍜'];
+
+  /* ---------------- utils ---------------- */
+  function $(id) { return document.getElementById(id); }
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+  function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function rarOf(item) { return RAR[item && item.rarity] || RAR.N; }
+  function matches(el, sel) {
+    var f = el.matches || el.webkitMatchesSelector || el.msMatchesSelector;
+    return f ? f.call(el, sel) : false;
+  }
+  function closest(node, sel) {
+    while (node && node.nodeType === 1) { if (matches(node, sel)) return node; node = node.parentNode; }
+    return null;
+  }
+  function anim(node, frames, opts) {
+    if (!node) return null;
+    if (node.animate) {
+      try { return node.animate(frames, opts); } catch (e) { /* fallback below */ }
+    }
+    var last = frames[frames.length - 1];
+    if (last) {
+      if (last.transform) node.style.transform = last.transform;
+      if (typeof last.opacity === 'number') node.style.opacity = last.opacity;
+    }
+    return null;
+  }
+
+  /* ---------------- state ---------------- */
+  var state = {
+    sets: [],
+    currentSetId: null,
+    history: [],
+    total: 0,
+    mode: 'infinite',
+    muted: false
+  };
+
+  function mkItem(name, rarity, weight, stock) {
+    return { id: uid(), name: name, rarity: RAR[rarity] ? rarity : 'N', weight: weight, stock: stock, stockMax: stock };
+  }
+  function mkSet(name, emoji, items) {
+    return { id: uid(), name: name, emoji: emoji, items: items };
+  }
+
+  function presets() {
+    return [
+      mkSet('今日のごはんガチャ', '🍱', [
+        mkItem('ラーメン', 'N', 22, 5),
+        mkItem('カレーライス', 'N', 20, 5),
+        mkItem('お寿司', 'R', 12, 3),
+        mkItem('焼肉', 'R', 10, 2),
+        mkItem('カフェでランチ', 'R', 10, 3),
+        mkItem('新しいお店を開拓', 'SR', 5, 2),
+        mkItem('ちょっと贅沢なディナー', 'SSR', 2, 1)
+      ]),
+      mkSet('自分へのご褒美ガチャ', '🎁', [
+        mkItem('コンビニスイーツ', 'N', 24, 5),
+        mkItem('カフェの新作ドリンク', 'N', 20, 5),
+        mkItem('ちょっと高いコスメ', 'R', 12, 2),
+        mkItem('マッサージ60分', 'R', 10, 2),
+        mkItem('欲しかった本を買う', 'R', 10, 2),
+        mkItem('映画を1本ゆっくり観る', 'SR', 6, 2),
+        mkItem('日帰り温泉', 'SR', 4, 1),
+        mkItem('思い切って遠出する', 'SSR', 2, 1),
+        mkItem('ぜんぶ叶える', 'UR', 1, 1)
+      ]),
+      mkSet('なんでもルーレット', '🎲', [
+        mkItem('散歩に出る', 'N', 16, 3),
+        mkItem('部屋を5分かたづける', 'N', 16, 3),
+        mkItem('ストレッチ', 'N', 16, 3),
+        mkItem('本を10ページ読む', 'R', 12, 3),
+        mkItem('音楽を1曲じっくり聴く', 'R', 12, 3),
+        mkItem('早めに寝る', 'R', 10, 3),
+        mkItem('新しいことをひとつ始める', 'SR', 6, 2),
+        mkItem('今日はぜんぶ自由！', 'SSR', 2, 1)
+      ])
+    ];
+  }
+
+  function normalizeSet(s) {
+    if (!s || typeof s.name !== 'string') return null;
+    var set = { id: s.id || uid(), name: s.name.slice(0, 24), emoji: s.emoji || '🎲', items: [] };
+    var items = Array.isArray(s.items) ? s.items : [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (!it || typeof it.name !== 'string') continue;
+      var w = Number(it.weight); if (!isFinite(w)) w = 10; w = Math.round(clamp(w, 1, 99));
+      var sm = Number(it.stockMax); if (!isFinite(sm) || sm < 0) sm = 1; sm = Math.round(clamp(sm, 0, 99));
+      var st = Number(it.stock); if (!isFinite(st) || st < 0) st = sm; st = Math.round(clamp(st, 0, 99));
+      set.items.push({
+        id: it.id || uid(),
+        name: it.name.slice(0, 40),
+        rarity: RAR[it.rarity] ? it.rarity : 'N',
+        weight: w,
+        stock: Math.min(st, sm),
+        stockMax: sm
+      });
+    }
+    return set;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({
+        v: 1,
+        sets: state.sets,
+        currentSetId: state.currentSetId,
+        history: state.history.slice(0, MAX_HISTORY),
+        total: state.total,
+        mode: state.mode,
+        muted: state.muted
+      }));
+    } catch (e) { /* 保存できない環境ではそのまま動く */ }
+  }
+
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(STORE); } catch (e) { raw = null; }
+    if (raw) {
+      try {
+        var d = JSON.parse(raw);
+        if (d && Array.isArray(d.sets) && d.sets.length) {
+          var sets = [];
+          for (var i = 0; i < d.sets.length; i++) {
+            var s = normalizeSet(d.sets[i]);
+            if (s) sets.push(s);
+          }
+          if (sets.length) {
+            state.sets = sets;
+            state.currentSetId = d.currentSetId;
+            state.history = Array.isArray(d.history) ? d.history.slice(0, MAX_HISTORY) : [];
+            state.total = typeof d.total === 'number' ? d.total : state.history.length;
+            state.mode = d.mode === 'stock' ? 'stock' : 'infinite';
+            state.muted = !!d.muted;
+            if (!findSet(state.currentSetId)) state.currentSetId = state.sets[0].id;
+            return;
+          }
+        }
+      } catch (e) { /* 壊れていたら作り直す */ }
+    }
+    state.sets = presets();
+    state.currentSetId = state.sets[0].id;
+    state.history = [];
+    state.total = 0;
+    save();
+  }
+
+  function findSet(id) {
+    for (var i = 0; i < state.sets.length; i++) { if (state.sets[i].id === id) return state.sets[i]; }
+    return null;
+  }
+  function currentSet() { return findSet(state.currentSetId) || state.sets[0] || null; }
+
+  function poolItems(set) {
+    if (!set) return [];
+    if (state.mode === 'stock') {
+      return set.items.filter(function (i) { return (i.stock || 0) > 0; });
+    }
+    return set.items.slice();
+  }
+  function weightOf(it) { return Math.max(1, Number(it.weight) || 1); }
+  function totalWeight(list) {
+    var t = 0;
+    for (var i = 0; i < list.length; i++) t += weightOf(list[i]);
+    return t;
+  }
+  function pickItem() {
+    var pool = poolItems(currentSet());
+    if (!pool.length) return null;
+    var r = Math.random() * totalWeight(pool);
+    for (var i = 0; i < pool.length; i++) {
+      r -= weightOf(pool[i]);
+      if (r <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }
+
+  /* ---------------- sound (Web Audio API) ---------------- */
+  var actx = null;
+
+  function ac() {
+    if (state.muted) return null;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    if (!actx) { try { actx = new C(); } catch (e) { return null; } }
+    if (actx.state === 'suspended' && actx.resume) { try { actx.resume(); } catch (e) {} }
+    return actx;
+  }
+
+  function tone(freq, dur, type, gain, when, slideTo) {
+    var a = actx; if (!a) return;
+    var t0 = (typeof when === 'number') ? when : a.currentTime;
+    var o = a.createOscillator();
+    var g = a.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(24, slideTo), t0 + dur);
+    var peak = Math.max(0.001, gain || 0.1);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+
+  function noise(dur, gain, when, freq) {
+    var a = actx; if (!a) return;
+    var t0 = (typeof when === 'number') ? when : a.currentTime;
+    var len = Math.max(1, Math.floor(a.sampleRate * dur));
+    var buf = a.createBuffer(1, len, a.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = a.createBufferSource();
+    src.buffer = buf;
+    var bp = a.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq || 1200;
+    bp.Q.value = 1.1;
+    var g = a.createGain();
+    g.gain.value = gain || 0.08;
+    src.connect(bp); bp.connect(g); g.connect(a.destination);
+    src.start(t0);
+  }
+
+  function sfxTurn() {
+    var a = ac(); if (!a) return;
+    var t = a.currentTime + 0.02;
+    for (var i = 0; i < 10; i++) {
+      var tt = t + i * 0.072 + Math.random() * 0.01;
+      tone(740 + (i % 3) * 110 + Math.random() * 50, 0.045, 'square', 0.05, tt);
+      noise(0.026, 0.045, tt, 2600);
+    }
+  }
+  function sfxDrop() {
+    var a = ac(); if (!a) return;
+    tone(160, 0.2, 'sine', 0.16, a.currentTime, 52);
+    noise(0.09, 0.09, a.currentTime, 480);
+  }
+  function sfxPop(rare) {
+    var a = ac(); if (!a) return;
+    var t = a.currentTime;
+    tone(480, 0.1, 'sine', 0.14, t, 980);
+    noise(0.12, 0.08, t, 1700);
+    tone(1180, 0.1, 'triangle', 0.07, t + 0.05, 1700);
+    if (rare) {
+      var notes = [1046.5, 1318.5, 1568.0, 2093.0];
+      for (var i = 0; i < notes.length; i++) tone(notes[i], 0.34, 'triangle', 0.07, t + 0.1 + i * 0.085);
+    }
+  }
+
+  function updateSoundBtn() {
+    var b = $('soundBtn');
+    if (!b) return;
+    b.textContent = state.muted ? '🔇' : '🔊';
+    b.className = 'icon-btn' + (state.muted ? ' off' : '');
+  }
+
+  /* ---------------- dome ---------------- */
+  var domeKey = '';
+
+  function scatter(n) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var p = null;
+      for (var tries = 0; tries < 120 && !p; tries++) {
+        var x = 15 + Math.random() * 70;
+        var y = 26 + Math.random() * 60;
+        var dx = x - 50, dy = y - 50;
+        if (Math.sqrt(dx * dx + dy * dy) > 37) continue;
+        var ok = true;
+        for (var j = 0; j < pts.length; j++) {
+          var ex = pts[j].x - x, ey = pts[j].y - y;
+          if (Math.sqrt(ex * ex + ey * ey) < 15.5) { ok = false; break; }
+        }
+        if (ok) p = { x: x, y: y };
+      }
+      if (!p) p = { x: 50 + Math.cos(i * 2.1) * 19, y: 56 + Math.sin(i * 2.1) * 17 };
+      pts.push(p);
+    }
+    return pts;
+  }
+
+  function buildDome() {
+    var host = $('domeCaps');
+    if (!host) return;
+    host.innerHTML = '';
+    var set = currentSet();
+    if (!set) return;
+
+    var pool = poolItems(set);
+    var bag = [];
+    var i, k;
+    for (i = 0; i < pool.length; i++) {
+      var reps = clamp(Math.round(weightOf(pool[i]) / 3), 1, 6);
+      for (k = 0; k < reps; k++) bag.push(pool[i]);
+    }
+
+    var MAX = 12;
+    var count = pool.length ? MAX : 0;
+    var pts = scatter(count);
+
+    for (i = 0; i < count; i++) {
+      var item = bag[Math.floor(Math.random() * bag.length)];
+      var r = rarOf(item);
+      var b = document.createElement('div');
+      b.className = 'ball r-' + item.rarity;
+      b.style.left = pts[i].x + '%';
+      b.style.top = pts[i].y + '%';
+      b.style.setProperty('--c', r.c);
+      b.style.setProperty('--r', (Math.random() * 44 - 22).toFixed(1) + 'deg');
+      var inner = document.createElement('div');
+      inner.className = 'ball-in';
+      inner.style.animationDelay = (Math.random() * 0.14).toFixed(2) + 's';
+      var h1 = document.createElement('span'); h1.className = 'half top';
+      var h2 = document.createElement('span'); h2.className = 'half bottom';
+      inner.appendChild(h1); inner.appendChild(h2);
+      b.appendChild(inner);
+      host.appendChild(b);
+    }
+  }
+
+  function domeSignature() {
+    var set = currentSet();
+    if (!set) return 'none';
+    var parts = [set.id, state.mode];
+    for (var i = 0; i < set.items.length; i++) {
+      var it = set.items[i];
+      parts.push(it.id + ':' + (state.mode === 'stock' ? it.stock : 0));
+    }
+    return parts.join('|');
+  }
+
+  function syncDome(force) {
+    var sig = domeSignature();
+    if (!force && sig === domeKey) return;
+    domeKey = sig;
+    buildDome();
+  }
+
+  /* ---------------- render ---------------- */
+  function renderPlay() {
+    var set = currentSet();
+    var strip = $('setStrip');
+    strip.innerHTML = '';
+    var i;
+    for (i = 0; i < state.sets.length; i++) {
+      var s = state.sets[i];
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.className = 'chip' + (set && s.id === set.id ? ' on' : '');
+      c.setAttribute('data-set', s.id);
+      var sp = document.createElement('span');
+      sp.textContent = s.emoji + ' ' + s.name;
+      c.appendChild(sp);
+      strip.appendChild(c);
+    }
+
+    var modeBtns = document.querySelectorAll('[data-mode]');
+    for (i = 0; i < modeBtns.length; i++) {
+      var m = modeBtns[i].getAttribute('data-mode');
+      modeBtns[i].className = (m === state.mode ? 'on' : '');
+    }
+
+    var stockMode = state.mode === 'stock';
+    $('resetStockBtn').hidden = !stockMode;
+    $('resetStockBtn2').hidden = !stockMode;
+    $('modeSub').textContent = stockMode ? '在庫あり' : '無限';
+    $('modeNote').textContent = stockMode
+      ? '引いたアイテムは1個ずつ減っていきます。なくなったらリセットできます。'
+      : '毎回同じ確率で出ます。何度でも回せます。';
+
+    var pool = poolItems(set);
+    var left = 0;
+    if (set) {
+      for (i = 0; i < set.items.length; i++) left += (set.items[i].stock || 0);
+    }
+
+    var btn = $('spinBtn');
+    btn.disabled = spinning || pool.length === 0;
+    if (!spinning) btn.textContent = '回す！';
+
+    var hint = '';
+    if (!set) {
+      hint = 'セットがありません。';
+    } else if (!set.items.length) {
+      hint = '「中身」タブでアイテムを追加してね';
+    } else if (!pool.length) {
+      hint = '在庫がなくなりました。リセットするか、中身を追加してね';
+    } else if (stockMode) {
+      hint = set.emoji + ' ' + set.name + ' ／ のこり ' + left + '個';
+    } else {
+      hint = set.emoji + ' ' + set.name + ' ／ ' + pool.length + '種類から選ばれるよ';
+    }
+    $('spinHint').textContent = hint;
+  }
+
+  function makeMini(item) {
+    var mini = document.createElement('span');
+    mini.className = 'mini r-' + item.rarity;
+    mini.style.setProperty('--c', rarOf(item).c);
+    var t = document.createElement('span'); t.className = 'half top';
+    var b = document.createElement('span'); b.className = 'half bottom';
+    mini.appendChild(t); mini.appendChild(b);
+    return mini;
+  }
+
+  function makeBadge(rarity) {
+    var b = document.createElement('span');
+    b.className = 'badge r-' + rarity + (rarity === 'UR' ? ' b-UR' : '');
+    b.style.setProperty('--rc', rarOf({ rarity: rarity }).c);
+    b.textContent = rarOf({ rarity: rarity }).label;
+    return b;
+  }
+
+  function renderEdit() {
+    var set = currentSet();
+    var i, j;
+
+    var list = $('setList');
+    list.innerHTML = '';
+    for (i = 0; i < state.sets.length; i++) {
+      var s = state.sets[i];
+      var row = document.createElement('div');
+      row.className = 'set-row' + (set && s.id === set.id ? ' on' : '');
+
+      var main = document.createElement('button');
+      main.type = 'button';
+      main.className = 'set-main';
+      main.setAttribute('data-set', s.id);
+      var e = document.createElement('span'); e.className = 'e'; e.textContent = s.emoji;
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = s.name;
+      var cnt = document.createElement('span'); cnt.className = 'c'; cnt.textContent = s.items.length + '個';
+      main.appendChild(e); main.appendChild(n); main.appendChild(cnt);
+
+      var ren = document.createElement('button');
+      ren.type = 'button'; ren.className = 'set-ic';
+      ren.setAttribute('data-act', 'rename'); ren.setAttribute('data-set', s.id);
+      ren.textContent = '✎';
+
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'set-ic danger';
+      del.setAttribute('data-act', 'del'); del.setAttribute('data-set', s.id);
+      del.textContent = '🗑';
+
+      row.appendChild(main); row.appendChild(ren); row.appendChild(del);
+      list.appendChild(row);
+    }
+
+    var items = set ? set.items : [];
+    $('itemCount').textContent = items.length;
+
+    var box = $('itemList');
+    box.innerHTML = '';
+
+    if (!items.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      var big = document.createElement('span'); big.className = 'big'; big.textContent = '🫙';
+      empty.appendChild(big);
+      empty.appendChild(document.createTextNode('まだ中身がありません。'));
+      box.appendChild(empty);
+      return;
+    }
+
+    var pool = poolItems(set);
+    var tw = totalWeight(pool);
+
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      var isIn = false;
+      for (j = 0; j < pool.length; j++) if (pool[j] === it) { isIn = true; break; }
+
+      var r = document.createElement('button');
+      r.type = 'button';
+      r.className = 'item-row';
+      r.setAttribute('data-item', it.id);
+      r.appendChild(makeMini(it));
+
+      var mainBox = document.createElement('span');
+      mainBox.className = 'item-main';
+      var nm = document.createElement('span');
+      nm.className = 'item-name';
+      nm.textContent = it.name;
+      mainBox.appendChild(nm);
+
+      var meta = document.createElement('span');
+      meta.className = 'item-meta';
+      meta.appendChild(makeBadge(it.rarity));
+      var w = document.createElement('span'); w.className = 'w'; w.textContent = '重み ' + weightOf(it);
+      meta.appendChild(w);
+      var p = document.createElement('span');
+      p.className = 'p';
+      p.textContent = (isIn && tw > 0) ? Math.round(weightOf(it) / tw * 100) + '%' : '出ない';
+      meta.appendChild(p);
+      if (state.mode === 'stock') {
+        var st = document.createElement('span');
+        st.className = 's' + ((it.stock || 0) <= 0 ? ' zero' : '');
+        st.textContent = '残り ' + (it.stock || 0) + '/' + (it.stockMax || 0);
+        meta.appendChild(st);
+      }
+      mainBox.appendChild(meta);
+      r.appendChild(mainBox);
+
+      var chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '›';
+      r.appendChild(chev);
+      box.appendChild(r);
+    }
+  }
+
+  function renderHistory() {
+    $('histTotal').textContent = state.total || 0;
+    $('histCount').textContent = state.history.length ? '直近' + state.history.length + '件' : '';
+
+    var counts = {};
+    var i;
+    for (i = 0; i < state.history.length; i++) {
+      var k = state.history[i].rar || 'N';
+      counts[k] = (counts[k] || 0) + 1;
+    }
+
+    var sum = $('histSum');
+    sum.innerHTML = '';
+    for (i = 0; i < RAR_ORDER.length; i++) {
+      var key = RAR_ORDER[i];
+      if (!counts[key]) continue;
+      var wrap = document.createElement('span');
+      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:#faf8fc;border-radius:999px;padding:4px 9px 4px 5px;';
+      wrap.appendChild(makeBadge(key));
+      var cnt = document.createElement('span');
+      cnt.style.cssText = 'font-size:11px;font-weight:900;color:#6f6a7c;';
+      cnt.textContent = '×' + counts[key];
+      wrap.appendChild(cnt);
+      sum.appendChild(wrap);
+    }
+
+    var list = $('histList');
+    list.innerHTML = '';
+    if (!state.history.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      var big = document.createElement('span'); big.className = 'big'; big.textContent = '📭';
+      empty.appendChild(big);
+      empty.appendChild(document.createTextNode('まだ履歴がありません。'));
+      list.appendChild(empty);
+      return;
+    }
+
+    for (i = 0; i < state.history.length; i++) {
+      var h = state.history[i];
+      var row = document.createElement('div');
+      row.className = 'hist-item';
+
+      var d = new Date(h.t || Date.now());
+      var time = document.createElement('span');
+      time.className = 'hist-time';
+      time.textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+
+      var nm = document.createElement('span');
+      nm.className = 'hist-name';
+      nm.textContent = h.name || '(不明)';
+      if (h.sname) {
+        var sub = document.createElement('span');
+        sub.className = 'hist-set';
+        sub.textContent = h.sname;
+        nm.appendChild(sub);
+      }
+
+      row.appendChild(time);
+      row.appendChild(nm);
+      row.appendChild(makeBadge(h.rar || 'N'));
+      list.appendChild(row);
+    }
+  }
+
+  function renderAll() {
+    syncDome();
+    renderPlay();
+    renderEdit();
+    renderHistory();
+    updateSoundBtn();
+  }
+
+  /* ---------------- modal helpers ---------------- */
+  function lockScroll() {
+    var any = document.querySelector('.modal.on');
+    document.body.style.overflow = any ? 'hidden' : '';
+  }
+  function openModal(id) {
+    var m = $(id);
+    if (!m) return;
+    m.classList.add('on');
+    lockScroll();
+  }
+  function closeModal(id) {
+    var m = $(id);
+    if (!m) return;
+    m.classList.remove('on');
+    lockScroll();
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  var confirmCb = null;
+  function showConfirm(msg, cb) {
+    $('confirmMsg').textContent = msg;
+    confirmCb = cb;
+    openModal('confirmModal');
+  }
+
+  /* ---------------- views ---------------- */
+  function switchView(name) {
+    var views = ['play', 'edit', 'history'];
+    var i;
+    for (i = 0; i < views.length; i++) {
+      var v = $('view-' + views[i]);
+      if (v) v.className = 'view' + (views[i] === name ? ' on' : '');
+    }
+    var tabs = document.querySelectorAll('.tab');
+    for (i = 0; i < tabs.length; i++) {
+      var tv = tabs[i].getAttribute('data-view');
+      tabs[i].className = 'tab' + (tv === name ? ' on' : '');
+    }
+    if (name === 'edit') renderEdit();
+    if (name === 'history') renderHistory();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------- spin ---------------- */
+  var spinning = false;
+  var handleRot = 0;
+
+  function spin() {
+    if (spinning) return;
+    var set = currentSet();
+    if (!set) return;
+    var pool = poolItems(set);
+
+    if (!pool.length) {
+      if (set.items.length && state.mode === 'stock') {
+        showConfirm('在庫がなくなりました。在庫をリセットしますか？', function () { resetStock(); });
+      } else {
+        toast('中身を追加してから回してね');
+      }
+      return;
+    }
+
+    ac();
+    spinning = true;
+    sfxTurn();
+
+    var btn = $('spinBtn');
+    btn.disabled = true;
+    btn.textContent = 'ガチャガチャ…';
+
+    handleRot += 360;
+    $('handle').style.transform = 'rotate(' + handleRot + 'deg)';
+    $('domeCaps').classList.add('shaking');
+
+    setTimeout(function () {
+      $('domeCaps').classList.remove('shaking');
+      var item = pickItem();
+      if (!item) { finishSpin(); return; }
+      dropCapsule(item, function (node, y1) {
+        popCapsule(item, node, y1, function () {
+          commitResult(item, set);
+          showResult(item, set);
+          finishSpin();
+        });
+      });
+    }, 880);
+  }
+
+  function finishSpin() {
+    spinning = false;
+    renderAll();
+  }
+
+  function dropCapsule(item, cb) {
+    var machine = $('machine');
+    var layer = $('dropLayer');
+    var mr = machine.getBoundingClientRect();
+    var dr = $('dome').getBoundingClientRect();
+    var tr = $('tray').getBoundingClientRect();
+    var size = Math.round(mr.width * 0.155);
+    var y0 = dr.bottom - mr.top - size * 0.5;
+    var y1 = tr.top - mr.top + tr.height / 2 - size / 2;
+
+    var node = document.createElement('div');
+    node.className = 'falling capsule r-' + item.rarity;
+    node.style.width = size + 'px';
+    node.style.height = size + 'px';
+    node.style.setProperty('--c', rarOf(item).c);
+    var h1 = document.createElement('span'); h1.className = 'half top';
+    var h2 = document.createElement('span'); h2.className = 'half bottom';
+    node.appendChild(h1); node.appendChild(h2);
+    node.style.transform = 'translate(-50%, ' + y0 + 'px) rotate(0deg)';
+    layer.appendChild(node);
+
+    setTimeout(sfxDrop, 500);
+
+    anim(node, [
+      { transform: 'translate(-50%,' + y0 + 'px) rotate(0deg)' },
+      { transform: 'translate(-50%,' + (y0 + (y1 - y0) * 0.62) + 'px) rotate(130deg)', offset: 0.62 },
+      { transform: 'translate(-50%,' + y1 + 'px) rotate(212deg)', offset: 0.88 },
+      { transform: 'translate(-50%,' + (y1 - 9) + 'px) rotate(224deg)', offset: 0.95 },
+      { transform: 'translate(-50%,' + y1 + 'px) rotate(230deg)' }
+    ], { duration: 760, easing: 'cubic-bezier(.42,.02,.78,.62)', fill: 'forwards' });
+
+    setTimeout(function () { cb(node, y1); }, 800);
+  }
+
+  function popCapsule(item, node, y1, cb) {
+    var rare = item.rarity === 'SR' || item.rarity === 'SSR' || item.rarity === 'UR';
+    sfxPop(rare);
+
+    var rect = node.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+
+    var top = node.querySelector('.half.top');
+    var bot = node.querySelector('.half.bottom');
+    anim(top, [
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(-16%,-80%) rotate(-40deg)', opacity: 0 }
+    ], { duration: 440, easing: 'cubic-bezier(.2,1.1,.4,1)', fill: 'forwards' });
+    anim(bot, [
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(18%,66%) rotate(36deg)', opacity: 0 }
+    ], { duration: 440, easing: 'cubic-bezier(.2,1.1,.4,1)', fill: 'forwards' });
+
+    var ring = document.createElement('div');
+    ring.className = 'pop-ring';
+    ring.style.top = (y1 + node.offsetHeight / 2) + 'px';
+    $('dropLayer').appendChild(ring);
+    anim(ring, [
+      { transform: 'scale(.35)', opacity: .95 },
+      { transform: 'scale(2.6)', opacity: 0 }
+    ], { duration: 520, easing: 'ease-out', fill: 'forwards' });
+
+    confetti(cx, cy, rare ? 64 : 32);
+    if (rare) confetti(cx, cy - 24, 28);
+
+    setTimeout(function () {
+      if (node.parentNode) node.parentNode.removeChild(node);
+      if (ring.parentNode) ring.parentNode.removeChild(ring);
+      cb();
+    }, 470);
+  }
+
+  function confetti(cx, cy, count) {
+    var layer = $('confetti');
+    if (!layer) return;
+    var colors = ['#ff5f8d', '#ffd166', '#7ee787', '#5ec8ff', '#b18cff', '#ff9f43', '#fff07a', '#ff6ba8'];
+    for (var i = 0; i < count; i++) {
+      var p = document.createElement('i');
+      var w = 5 + Math.random() * 6;
+      var h = 7 + Math.random() * 9;
+      p.style.cssText = 'position:absolute;left:' + cx + 'px;top:' + cy + 'px;width:' + w + 'px;height:' + h + 'px;' +
+        'border-radius:' + (Math.random() < 0.4 ? '50%' : '2px') + ';background:' + colors[i % colors.length] + ';';
+      layer.appendChild(p);
+
+      var ang = Math.random() * Math.PI * 2;
+      var dist = 50 + Math.random() * 170;
+      var dx = Math.cos(ang) * dist;
+      var dy = Math.sin(ang) * dist * 0.85 - 30;
+      var rot = Math.random() * 720 - 360;
+      var dur = 850 + Math.random() * 650;
+
+      anim(p, [
+        { transform: 'translate(-50%,-50%) rotate(0deg)', opacity: 1 },
+        { transform: 'translate(-50%,-50%) rotate(' + (rot / 2) + 'deg)', opacity: 1, offset: 0.35 },
+        { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) rotate(' + rot + 'deg)', opacity: 0 }
+      ], { duration: dur, easing: 'cubic-bezier(.12,.68,.36,1)', fill: 'forwards' });
+
+      (function (elm, t) {
+        setTimeout(function () { if (elm.parentNode) elm.parentNode.removeChild(elm); }, t);
+      })(p, dur + 150);
+    }
+  }
+
+  function commitResult(item, set) {
+    if (state.mode === 'stock') item.stock = Math.max(0, (item.stock || 0) - 1);
+    state.total = (state.total || 0) + 1;
+    state.history.unshift({
+      t: Date.now(),
+      sid: set.id,
+      sname: set.name,
+      name: item.name,
+      rar: item.rarity
+    });
+    if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+    save();
+  }
+
+  function showResult(item, set) {
+    var r = rarOf(item);
+    var rare = item.rarity === 'SR' || item.rarity === 'SSR' || item.rarity === 'UR';
+
+    var badge = $('resRarity');
+    badge.textContent = r.label;
+    badge.className = 'result-rarity' + (item.rarity === 'UR' ? ' rb-rainbow' : '');
+    badge.style.background = item.rarity === 'UR' ? '' : r.c;
+
+    var ball = $('resBall');
+    ball.className = 'result-ball r-' + item.rarity;
+    ball.style.setProperty('--c', r.c);
+
+    $('resLabel').textContent = rare ? 'あたり！' : 'でた！';
+    var nm = $('resName');
+    nm.textContent = item.name;
+    nm.className = 'result-name' + (rare ? ' rare' : '');
+    $('resSet').textContent = set.emoji + ' ' + set.name;
+
+    var card = $('resultCard');
+    card.className = 'result-card' + (item.rarity === 'UR' ? ' glow-rainbow' : (rare ? ' glow' : ''));
+
+    openModal('resultModal');
+  }
+
+  function resetStock() {
+    var set = currentSet();
+    if (!set) return;
+    for (var i = 0; i < set.items.length; i++) {
+      set.items[i].stock = set.items[i].stockMax || 0;
+    }
+    save();
+    renderAll();
+    toast('在庫をリセットしたよ');
+  }
+
+  /* ---------------- item sheet ---------------- */
+  var editItem = null;
+  var editRarity = 'N';
+
+  function renderRarRow() {
+    var row = $('rarRow');
+    row.innerHTML = '';
+    for (var i = 0; i < RAR_ORDER.length; i++) {
+      var key = RAR_ORDER[i];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rar-btn r-' + key + (key === 'UR' ? ' b-UR' : '') + (key === editRarity ? ' on' : '');
+      b.style.setProperty('--rc', RAR[key].c);
+      b.setAttribute('data-rar', key);
+      b.textContent = RAR[key].label;
+      row.appendChild(b);
+    }
+  }
+
+  function updateProb() {
+    var set = currentSet();
+    var w = clamp(Math.round(Number($('itemWeight').value) || 10), 1, 99);
+    var others = [];
+    if (set) {
+      for (var i = 0; i < set.items.length; i++) {
+        if (set.items[i] !== editItem) others.push(set.items[i]);
+      }
+    }
+    var tw = totalWeight(others) + w;
+    var pct = Math.round(w / tw * 100);
+    $('itemProb').textContent = 'いまの確率：約 ' + pct + '%';
+  }
+
+  function openItemSheet(item) {
+    var set = currentSet();
+    if (!set) return;
+    editItem = item || null;
+    editRarity = item ? item.rarity : 'N';
+    $('itemSheetTitle').textContent = item ? 'アイテムを編集' : 'アイテムを追加';
+    $('itemName').value = item ? item.name : '';
+    $('itemWeight').value = item ? weightOf(item) : 10;
+    $('itemWeightRange').value = clamp(item ? weightOf(item) : 10, 1, 50);
+    $('itemStock').value = item ? (item.stockMax || 0) : 3;
+    $('delItemBtn').hidden = !item;
+    renderRarRow();
+    updateProb();
+    openModal('itemModal');
+  }
+
+  function saveItem() {
+    var set = currentSet();
+    if (!set) return;
+    var name = String($('itemName').value || '').trim();
+    if (!name) { toast('名前を入れてね'); $('itemName').focus(); return; }
+    name = name.slice(0, 40);
+    var w = clamp(Math.round(Number($('itemWeight').value) || 10), 1, 99);
+    var stock = clamp(Math.round(Number($('itemStock').value) || 0), 0, 99);
+
+    if (editItem) {
+      editItem.name = name;
+      editItem.rarity = editRarity;
+      editItem.weight = w;
+      editItem.stock = stock;
+      editItem.stockMax = stock;
+    } else {
+      set.items.push({ id: uid(), name: name, rarity: editRarity, weight: w, stock: stock, stockMax: stock });
+    }
+    save();
+    closeModal('itemModal');
+    renderAll();
+    toast(editItem ? '保存したよ' : '追加したよ');
+    editItem = null;
+  }
+
+  function removeItem(item) {
+    var set = currentSet();
+    if (!set || !item) return;
+    for (var i = 0; i < set.items.length; i++) {
+      if (set.items[i].id === item.id) { set.items.splice(i, 1); break; }
+    }
+    save();
+    closeModal('itemModal');
+    renderAll();
+    toast('削除したよ');
+  }
+
+  /* ---------------- set sheet ---------------- */
+  var editSet = null;
+  var editEmoji = '🎲';
+
+  function buildEmojiGrid() {
+    var g = $('emojiGrid');
+    g.innerHTML = '';
+    for (var i = 0; i < EMOJIS.length; i++) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-btn' + (EMOJIS[i] === editEmoji ? ' on' : '');
+      b.setAttribute('data-emoji', EMOJIS[i]);
+      b.textContent = EMOJIS[i];
+      g.appendChild(b);
+    }
+  }
+
+  function openSetSheet(set) {
+    editSet = set || null;
+    editEmoji = set ? set.emoji : EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    $('setSheetTitle').textContent = set ? 'セットを編集' : '新しいセット';
+    $('setName').value = set ? set.name : '';
+    $('saveSetBtn').textContent = set ? '保存する' : '作成する';
+    buildEmojiGrid();
+    openModal('setModal');
+  }
+
+  function saveSet() {
+    var name = String($('setName').value || '').trim();
+    if (!name) { toast('名前を入れてね'); $('setName').focus(); return; }
+    name = name.slice(0, 24);
+    if (editSet) {
+      editSet.name = name;
+      editSet.emoji = editEmoji;
+      save();
+      closeModal('setModal');
+      renderAll();
+      toast('保存したよ');
+      editSet = null;
+      return;
+    }
+    var s = mkSet(name, editEmoji, []);
+    state.sets.push(s);
+    state.currentSetId = s.id;
+    save();
+    closeModal('setModal');
+    renderAll();
+    switchView('edit');
+    toast('セットを作ったよ。中身を追加してね');
+  }
+
+  function deleteSet(set) {
+    if (state.sets.length <= 1) { toast('セットが1つだけのときは削除できないよ'); return; }
+    showConfirm('「' + set.name + '」を削除しますか？中身もいっしょに消えます。', function () {
+      for (var i = 0; i < state.sets.length; i++) {
+        if (state.sets[i].id === set.id) { state.sets.splice(i, 1); break; }
+      }
+      if (state.currentSetId === set.id) state.currentSetId = state.sets[0].id;
+      save();
+      renderAll();
+      toast('セットを削除したよ');
+    });
+  }
+
+  /* ---------------- bind ---------------- */
+  function bind() {
+    var i;
+
+    $('soundBtn').addEventListener('click', function () {
+      state.muted = !state.muted;
+      save();
+      updateSoundBtn();
+      if (!state.muted) { ac(); sfxPop(false); toast('サウンド ON'); }
+      else { toast('サウンド OFF'); }
+    });
+
+    $('setStrip').addEventListener('click', function (e) {
+      var chip = closest(e.target, '.chip');
+      if (!chip) return;
+      var id = chip.getAttribute('data-set');
+      if (id && id !== state.currentSetId) {
+        state.currentSetId = id;
+        save();
+        renderAll();
+        window.scrollTo(0, 0);
+      }
+    });
+
+    var modeBtns = document.querySelectorAll('[data-mode]');
+    for (i = 0; i < modeBtns.length; i++) {
+      modeBtns[i].addEventListener('click', function () {
+        var m = this.getAttribute('data-mode');
+        if (m === state.mode) return;
+        state.mode = m;
+        save();
+        renderAll();
+        toast(m === 'stock' ? '在庫ありモードにしたよ' : '無限モードにしたよ');
+      });
+    }
+
+    $('resetStockBtn').addEventListener('click', resetStock);
+    $('resetStockBtn2').addEventListener('click', resetStock);
+
+    $('spinBtn').addEventListener('click', spin);
+    $('handle').addEventListener('click', spin);
+
+    var tabs = document.querySelectorAll('.tab');
+    for (i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function () {
+        switchView(this.getAttribute('data-view'));
+      });
+    }
+
+    $('addSetBtn').addEventListener('click', function () { openSetSheet(null); });
+    $('saveSetBtn').addEventListener('click', saveSet);
+
+    $('emojiGrid').addEventListener('click', function (e) {
+      var b = closest(e.target, '.emoji-btn');
+      if (!b) return;
+      editEmoji = b.getAttribute('data-emoji');
+      var all = this.querySelectorAll('.emoji-btn');
+      for (var k = 0; k < all.length; k++) {
+        all[k].className = 'emoji-btn' + (all[k] === b ? ' on' : '');
+      }
+    });
+
+    $('setList').addEventListener('click', function (e) {
+      var act = closest(e.target, '[data-act]');
+      if (act) {
+        var id = act.getAttribute('data-set');
+        var s = findSet(id);
+        if (!s) return;
+        if (act.getAttribute('data-act') === 'rename') openSetSheet(s);
+        else deleteShow(s);
+        return;
+      }
+      var main = closest(e.target, '.set-main');
+      if (main) {
+        var id2 = main.getAttribute('data-set');
+        if (id2 && id2 !== state.currentSetId) {
+          state.currentSetId = id2;
+          save();
+          renderAll();
+        }
+      }
+    });
+
+    $('addItemBtn').addEventListener('click', function () { openItemSheet(null); });
+
+    $('itemList').addEventListener('click', function (e) {
+      var row = closest(e.target, '.item-row');
+      if (!row) return;
+      var id = row.getAttribute('data-item');
+      var set = currentSet();
+      if (!set) return;
+      for (var k = 0; k < set.items.length; k++) {
+        if (set.items[k].id === id) { openItemSheet(set.items[k]); return; }
+      }
+    });
+
+    $('rarRow').addEventListener('click', function (e) {
+      var b = closest(e.target, '.rar-btn');
+      if (!b) return;
+      editRarity = b.getAttribute('data-rar');
+      renderRarRow();
+    });
+
+    var steps = document.querySelectorAll('[data-step]');
+    for (i = 0; i < steps.length; i++) {
+      steps[i].addEventListener('click', function () {
+        var field = this.getAttribute('data-step');
+        var dir = Number(this.getAttribute('data-dir')) || 1;
+        var input = field === 'stock' ? $('itemStock') : $('itemWeight');
+        var min = field === 'stock' ? 0 : 1;
+        var max = 99;
+        var v = clamp(Math.round(Number(input.value) || min) + dir, min, max);
+        input.value = v;
+        if (field === 'weight') $('itemWeightRange').value = clamp(v, 1, 50);
+        updateProb();
+      });
+    }
+
+    $('itemWeight').addEventListener('input', function () {
+      $('itemWeightRange').value = clamp(Math.round(Number(this.value) || 1), 1, 50);
+      updateProb();
+    });
+    $('itemWeightRange').addEventListener('input', function () {
+      $('itemWeight').value = this.value;
+      updateProb();
+    });
+
+    $('saveItemBtn').addEventListener('click', saveItem);
+    $('delItemBtn').addEventListener('click', function () {
+      if (!editItem) return;
+      var it = editItem;
+      showConfirm('「' + it.name + '」を削除しますか？', function () { removeItem(it); });
+    });
+    $('itemName').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    $('confirmYes').addEventListener('click', function () {
+      var f = confirmCb;
+      confirmCb = null;
+      closeModal('confirmModal');
+      if (f) f();
+    });
+    $('confirmNo').addEventListener('click', function () {
+      confirmCb = null;
+      closeModal('confirmModal');
+    });
+
+    $('againBtn').addEventListener('click', function () {
+      closeModal('resultModal');
+      setTimeout(spin, 160);
+    });
+    $('closeResultBtn').addEventListener('click', function () { closeModal('resultModal'); });
+
+    $('clearHistBtn').addEventListener('click', function () {
+      if (!state.history.length && !state.total) { toast('履歴はまだないよ'); return; }
+      showConfirm('履歴と回数を消しますか？', function () {
+        state.history = [];
+        state.total = 0;
+        save();
+        renderHistory();
+        toast('履歴を消したよ');
+      });
+    });
+
+    var closers = document.querySelectorAll('[data-close]');
+    for (i = 0; i < closers.length; i++) {
+      closers[i].addEventListener('click', function () {
+        var m = closest(this, '.modal');
+        if (m) closeModal(m.id);
+      });
+    }
+
+    window.addEventListener('resize', function () {
+      if (!document.querySelector('.modal.on')) lockScroll();
+    });
+  }
+
+  function deleteShow(set) { deleteSet(set); }
+
+  /* ---------------- init ---------------- */
+  function init() {
+    load();
+    bind();
+    renderAll();
+    updateSoundBtn();
+
+    document.addEventListener('touchstart', function once() {
+      if (!state.muted) ac();
+      document.removeEventListener('touchstart', once);
+    }, { passive: true });
+
+    if (!storageWorks()) {
+      setTimeout(function () {
+        toast('この開き方だと記録が残らないかも。Safariで開くと自動保存されます');
+      }, 1600);
+    }
+  }
+
+  function storageWorks() {
+    try {
+      localStorage.setItem('__gc_test', '1');
+      localStorage.removeItem('__gc_test');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
