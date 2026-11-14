@@ -382,20 +382,20 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 
 /* aura */
 .aura{
-  position:absolute;left:50%;top:50%;width:340px;height:340px;margin:-170px 0 0 -170px;
-  border-radius:50%;filter:blur(30px);pointer-events:none;opacity:.95;
+  position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;
+  border-radius:50%;filter:blur(34px) saturate(1.25);pointer-events:none;opacity:.95;
   transition:background .45s ease,opacity .45s ease;
 }
 .aura.blue{background:radial-gradient(circle,rgba(94,231,255,.55),rgba(70,110,255,.28) 46%,transparent 72%);animation:breathe 2.8s ease-in-out infinite;}
 .aura.gold{background:radial-gradient(circle,rgba(255,215,106,.62),rgba(255,150,40,.32) 46%,transparent 72%);animation:breathe 2.1s ease-in-out infinite;}
 .aura.rainbow{background:radial-gradient(circle,rgba(255,190,240,.55),rgba(140,110,255,.34) 46%,transparent 74%);animation:breathe 1.7s ease-in-out infinite;}
 .auraSpin{
-  position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;
+  position:absolute;left:50%;top:50%;width:380px;height:380px;margin:-190px 0 0 -190px;
   border-radius:50%;pointer-events:none;opacity:0;transition:opacity .5s ease;
   background:conic-gradient(from 0deg,#ff4d80,#ffd166,#4ade80,#38bdf8,#a78bfa,#ff4d80);
   filter:blur(26px);
 }
-.auraSpin.on{opacity:.42;animation:spin 2.6s linear infinite;}
+.auraSpin.on{opacity:.55;animation:spin 2.6s linear infinite;}
 
 .packWrap{
   position:relative;display:grid;place-items:center;
