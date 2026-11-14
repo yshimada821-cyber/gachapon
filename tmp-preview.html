@@ -421,6 +421,31 @@ input,textarea{font-family:inherit;}
 }
 .send:active{transform:scale(.94);}
 .send:disabled{background:#e8d0b8;}
+.locbtn{
+  width:44px;height:44px;flex:0 0 auto;
+  border:none;border-radius:50%;
+  background:#fff3e6;color:#a85a1a;font-size:19px;line-height:1;
+  display:grid;place-items:center;cursor:pointer;
+  box-shadow:0 1px 3px rgba(150,80,20,.16);
+  transition:transform .12s, background .15s;
+}
+.locbtn:active{transform:scale(.94);}
+.locbtn.busy{background:#ffdfc0;color:#b45309;}
+.locbtn:disabled{opacity:.5;cursor:default;}
+
+/* 位置情報カード */
+.bubble.loc{padding:10px 12px 11px;}
+.loc-t{font-size:14px;font-weight:800;line-height:1.45;}
+.loc-acc{font-size:11px;opacity:.85;margin-top:2px;}
+.loc-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;}
+.loc-btn{
+  display:inline-block;text-decoration:none;white-space:nowrap;
+  font-size:11.5px;font-weight:800;padding:6px 11px;border-radius:999px;
+  background:#fff3e6;color:#a8410a;border:1px solid rgba(226,120,30,.35);
+}
+.bubble.me.loc .loc-btn{background:rgba(255,255,255,.94);color:#a8410a;}
+.bubble.peer.loc .loc-btn{background:#fff3e6;}
+.loc-btn:active{transform:scale(.97);}
 .offline-note{
   display:none;text-align:center;font-size:11.5px;
   color:#7d4a12;background:#ffe9bd;
@@ -663,6 +688,7 @@ audio{display:none;}
   <div class="offline-note" id="offlineNote">相手との接続が切れました。相手の再入室を待っています…</div>
 
   <div class="composer">
+    <button class="locbtn" id="btnLoc" aria-label="現在地を送る" disabled>📍</button>
     <textarea id="input" rows="1" placeholder="メッセージを入力" enterkeyhint="send" autocomplete="off"></textarea>
     <button class="send" id="btnSend" aria-label="送信" disabled>➤</button>
   </div>
@@ -997,6 +1023,7 @@ audio{display:none;}
     lastCallMsgAt: 0,
     guestAttempt: 0,
     lastTypingSent: 0,
+    locBusy: false,
     joinSettled: false,
     openTimeout: null,
     helloTimeout: null
@@ -1232,12 +1259,19 @@ audio{display:none;}
       case "badpin": return;
 
       case "msg":
-        S.msgs.push({
+        var inc = {
           id: d.id || uid(),
           from: "peer",
           text: String(d.text || ""),
           ts: d.ts || Date.now()
-        });
+        };
+        if (d.kind === "location") {
+          inc.kind = "location";
+          inc.lat = Number(d.lat);
+          inc.lng = Number(d.lng);
+          inc.acc = (d.acc == null ? null : Number(d.acc));
+        }
+        S.msgs.push(inc);
         hideTyping();
         renderMsgs();
         if (isViewing()) markRead([S.msgs[S.msgs.length - 1].id]);
@@ -1609,6 +1643,7 @@ audio{display:none;}
     tx.textContent = on ? "オンライン・1対1" : "オフライン";
     $("#btnCall").disabled = !on;
     $("#btnSend").disabled = !on;
+    if (!S.locBusy) $("#btnLoc").disabled = !on;
     $("#offlineNote").classList.toggle("on", !on);
     $("#input").disabled = false;
   }
@@ -1651,19 +1686,21 @@ audio{display:none;}
       }
 
       var mine = m.from === "me";
-      var cont = !!(prev && prev.from === m.from && (m.ts - prev.ts) < 60000 && !prev.type);
-      var body = esc(m.text).replace(/\n/g, "<br>");
+      var cont = !!(prev && prev.from === m.from && (m.ts - prev.ts) < 60000 && !prev.type && !prev.kind && m.kind !== "location");
+      var isLoc = m.kind === "location";
+      var body = isLoc ? locCardHTML(m) : esc(m.text).replace(/\n/g, "<br>");
+      var bcls = "bubble " + (mine ? "me" : "peer") + (isLoc ? " loc" : "");
 
       if (mine) {
         var meta = m.read
           ? '<span class="meta rd">既読 ' + hhmm(m.readAt || m.ts) + '</span>'
           : '<span class="meta">' + hhmm(m.ts) + '</span>';
         out += '<div class="row me' + (cont ? ' cont' : '') + '">' + meta
-             + '<div class="bubble me">' + body + '</div></div>';
+             + '<div class="' + bcls + '">' + body + '</div></div>';
       } else {
         out += '<div class="row peer' + (cont ? ' cont' : '') + '">'
              + '<div class="pava' + (cont ? ' ghost' : '') + '">' + esc(initial(S.peerName)) + '</div>'
-             + '<div class="bubble peer">' + body + '</div>'
+             + '<div class="' + bcls + '">' + body + '</div>'
              + '<span class="meta">' + hhmm(m.ts) + '</span></div>';
       }
       prev = m;
@@ -1689,6 +1726,70 @@ audio{display:none;}
     autoGrow();
     sendStopTyping();
     renderMsgs(true);
+  }
+
+  /* ---------------- 位置情報 ---------------- */
+
+  function locErrorText(code){
+    if (code === 1) return "位置情報が許可されていません。ブラウザの設定で許可してください";
+    if (code === 2) return "現在地を特定できませんでした。電波の良い場所でお試しください";
+    if (code === 3) return "位置情報の取得がタイムアウトしました。もう一度お試しください";
+    return "位置情報を取得できませんでした";
+  }
+
+  function sendLocation(){
+    if (!S.conn || !S.conn.open) { toast("相手が接続していません"); return; }
+    if (!navigator.geolocation) { toast("このブラウザは位置情報に対応していません", 4200); return; }
+    if (S.locBusy) return;
+
+    var btn = $("#btnLoc");
+    S.locBusy = true;
+    if (btn) { btn.classList.add("busy"); btn.disabled = true; }
+    toast("現在地を取得中…", 1400);
+
+    var done = function(){
+      S.locBusy = false;
+      if (btn) { btn.classList.remove("busy"); btn.disabled = !(S.conn && S.conn.open); }
+    };
+
+    try {
+      navigator.geolocation.getCurrentPosition(function(pos){
+        var c = pos.coords || {};
+        var m = {
+          id: uid(), from: "me", kind: "location",
+          lat: c.latitude, lng: c.longitude,
+          acc: (c.accuracy == null ? null : Math.round(c.accuracy)),
+          text: "", ts: Date.now(), read: false
+        };
+        S.msgs.push(m);
+        say({ type: "msg", id: m.id, kind: "location", lat: m.lat, lng: m.lng, acc: m.acc, ts: m.ts });
+        renderMsgs(true);
+        done();
+        toast("現在地を送りました", 1800);
+      }, function(err){
+        done();
+        toast(locErrorText(err && err.code), 5200);
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    } catch (e) {
+      done();
+      toast("位置情報を取得できませんでした", 4200);
+    }
+  }
+
+  function locCardHTML(m){
+    var lat = Number(m.lat), lng = Number(m.lng);
+    if (!isFinite(lat) || !isFinite(lng)) {
+      return '<div class="loc-t">📍 現在地を共有しました</div>';
+    }
+    var acc = (m.acc == null || !isFinite(Number(m.acc))) ? null : Math.round(Number(m.acc));
+    var g = "https://www.google.com/maps?q=" + lat + "," + lng;
+    var a = "https://maps.apple.com/?ll=" + lat + "," + lng + "&q=" + encodeURIComponent("現在地");
+    return '<div class="loc-t">📍 現在地を共有しました</div>'
+         + (acc === null ? "" : '<div class="loc-acc">精度 ±約' + acc + 'm</div>')
+         + '<div class="loc-btns">'
+         + '<a class="loc-btn" href="' + g + '" target="_blank" rel="noopener">Googleマップで開く</a>'
+         + '<a class="loc-btn" href="' + a + '" target="_blank" rel="noopener">Appleマップ</a>'
+         + '</div>';
   }
 
   function autoGrow(){
@@ -2252,7 +2353,9 @@ audio{display:none;}
   function notifyMessage(m){
     if (!m) return;
     var who = S.peerName || "あいて";
-    var body = (m.type === "sys") ? m.text : (m.text || "メッセージが届きました");
+    var body = (m.kind === "location")
+      ? "📍 現在地を送信しました"
+      : ((m.type === "sys") ? m.text : (m.text || "メッセージが届きました"));
     showNotif(who, body, "talk-msg:" + (S.code || "room"), "msg");
   }
 
@@ -2312,6 +2415,7 @@ audio{display:none;}
   $("#btnBack").addEventListener("click", leaveChat);
 
   $("#btnSend").addEventListener("click", sendMsg);
+  $("#btnLoc").addEventListener("click", sendLocation);
 
   elInput.addEventListener("input", function(){
     autoGrow();
@@ -2426,6 +2530,18 @@ audio{display:none;}
     window.__hidden = false;
   }
 
+  var geoMode = q.get("geo");
+  if (geoMode) {
+    navigator.geolocation = navigator.geolocation || {};
+    navigator.geolocation.getCurrentPosition = function(ok, err){
+      setTimeout(function(){
+        if (geoMode === "deny") return err && err({ code: 1, message: "User denied Geolocation" });
+        if (geoMode === "timeout") return err && err({ code: 3, message: "Timeout expired" });
+        ok({ coords: { latitude: 35.658034, longitude: 139.701636, accuracy: 28 }, timestamp: Date.now() });
+      }, 500);
+    };
+  }
+
   function render(){
     var box = document.getElementById("__notiflog");
     if (!box) return;
@@ -2474,7 +2590,7 @@ audio{display:none;}
     }, 300);
   });
 
-  // ホスト: 入室後にメッセージ送信・着信
+  // ホスト: 入室後にテキスト→位置情報→着信
   if (role === "a") {
     var sent = false;
     setInterval(function(){
@@ -2494,10 +2610,14 @@ audio{display:none;}
         var b = document.getElementById("btnCall");
         if (b && !b.disabled) b.click();
       }, 900 + lines.length * 1500 + 600);
+      setTimeout(function(){
+        var b = document.getElementById("btnLoc");
+        if (b && !b.disabled) b.click();
+      }, 11000);
     }, 200);
   }
 
-  // ゲスト: 入室したら画面を hidden にして通知を出させる
+  // ゲスト: 入室後に hidden（通知）→本人のメッセージ→位置情報→また表示
   if (role === "b") {
     var hid = false;
     setInterval(function(){
@@ -2507,7 +2627,24 @@ audio{display:none;}
         if (!q.get("notif")) return;
         window.__hidden = true;
         document.dispatchEvent(new Event("visibilitychange"));
-      }, 500);
+      }, 800);
+      setTimeout(function(){
+        var inp = document.getElementById("input");
+        if (inp) {
+          inp.value = "うん、あとでかけ直すね！";
+          inp.dispatchEvent(new Event("input"));
+          document.getElementById("btnSend").click();
+        }
+      }, 1500);
+      setTimeout(function(){
+        var b = document.getElementById("btnLoc");
+        if (b && !b.disabled) b.click();
+      }, 2600);
+      setTimeout(function(){
+        if (!q.get("notif")) return;
+        window.__hidden = false;
+        document.dispatchEvent(new Event("visibilitychange"));
+      }, 7000);
     }, 200);
   }
 })();
