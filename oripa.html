@@ -476,6 +476,10 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .hand::-webkit-scrollbar{display:none;}
 .hand .card:first-child{margin-left:auto;}
 .hand .card:last-child{margin-right:auto;}
+.hand.five{flex-wrap:wrap;align-content:center;justify-content:center;overflow:visible;gap:10px;padding:8px 12px;}
+.hand.five .card{width:min(27vw,20vh,140px);}
+.hand.five .card:first-child{margin-left:0;}
+.hand.five .card:last-child{margin-right:0;}
 .card{
   position:relative;flex:0 0 auto;width:min(27vw,24vh,136px);aspect-ratio:5/7;
   perspective:1200px;scroll-snap-align:center;
@@ -2053,7 +2057,7 @@ function frontFace(c, idx, total) {
 
 function buildHand() {
   var cards = stageState.cards;
-  elHand.className = 'hand ' + (cards.length === 1 ? 'one' : 'many');
+  elHand.className = 'hand ' + (cards.length === 1 ? 'one' : (cards.length >= 5 ? 'five' : 'many'));
   var html = '';
   for (var i = 0; i < cards.length; i++) {
     html += '<div class="card enter" data-i="' + i + '" style="animation-delay:' + (i * 80) + 'ms">' +
