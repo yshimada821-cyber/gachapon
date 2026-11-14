@@ -221,8 +221,16 @@ input,textarea{font-family:inherit;}
 /* ---------------- chat ---------------- */
 #scrChat{
   height:var(--vvh,100dvh);
-  background:var(--chat-top);
+  background:#0b0a14;
   color:#15181c;
+}
+.chat-shell{
+  width:100%;max-width:520px;height:100%;
+  margin:0 auto;
+  display:flex;flex-direction:column;
+  background:var(--chat-top);
+  box-shadow:0 0 70px rgba(0,0,0,.55);
+  overflow:hidden;
 }
 .chat-top{
   display:flex;align-items:center;gap:8px;
@@ -549,6 +557,7 @@ audio{display:none;}
 
 <!-- ========== CHAT ========== -->
 <div class="screen" id="scrChat">
+ <div class="chat-shell">
   <div class="chat-top">
     <button class="icon-btn" id="btnBack" aria-label="退出">‹</button>
     <div class="who">
@@ -581,6 +590,7 @@ audio{display:none;}
     <textarea id="input" rows="1" placeholder="メッセージを入力" enterkeyhint="send" autocomplete="off"></textarea>
     <button class="send" id="btnSend" aria-label="送信" disabled>➤</button>
   </div>
+ </div>
 </div>
 
 <!-- ========== FULL / ERROR ========== -->
