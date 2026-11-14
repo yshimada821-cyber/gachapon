@@ -2404,12 +2404,14 @@ function bindEvents() {
       save();
     } else if (f === 'count') {
       var v = Math.max(0, Math.min(999, num(el.value, 0)));
+      if (it._baseCount === undefined) { it._baseCount = it.count; it._baseLeft = it.left; }
       it.count = v;
-      if (it.left > v) it.left = v;
+      it.left = Math.max(0, Math.min(v, it._baseLeft + (v - it._baseCount)));
       var lb = row.querySelector ? row.querySelector('.left-badge b') : null;
       if (lb) lb.textContent = String(it.left);
       save();
       renderItemsFoot();
+      renderChips();
     } else if (f === 'value') {
       it.value = Math.max(0, Math.min(999999, num(el.value, 0)));
       save();
@@ -2430,6 +2432,8 @@ function bindEvents() {
       it.rank = el.value;
       save(); renderItems(); renderDraw();
     } else if (f === 'count' || f === 'name' || f === 'value') {
+      delete it._baseCount;
+      delete it._baseLeft;
       save(); renderItems(); renderDraw();
     }
   });
