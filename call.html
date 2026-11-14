@@ -382,6 +382,7 @@ body::before{
     role: null,          // 'host' | 'guest'
     peer: null,
     call: null,
+    ctl: null,           // 相手と直接つなぐ制御用データコネクション（切断通知）
     localStream: null,
     roomCode: null,
     startedAt: 0,
@@ -390,7 +391,8 @@ body::before{
     audioCtx: null,
     audioSrc: null,
     busy: false,
-    joined: false
+    joined: false,
+    ended: false
   };
 
   var elAudio = $("#remoteAudio");
@@ -603,7 +605,9 @@ body::before{
   }
 
   function fullReset(){
+    S.ended = true;
     closeCallKeepPeer();
+    if (S.ctl) { try { S.ctl.close(); } catch (e) {} S.ctl = null; }
     if (S.peer) { try { S.peer.destroy(); } catch (e) {} S.peer = null; }
     stopLocalTracks();
     if (S.audioSrc) { try { S.audioSrc.disconnect(); } catch (e) {} S.audioSrc = null; }
@@ -679,10 +683,22 @@ body::before{
       renderHost();
     });
 
+    peer.on("connection", function(dc){
+      S.ctl = dc;
+      bindCtl(dc);
+    });
+
     peer.on("call", function(call){
-      if (S.call) { try { call.close(); } catch (e) {} return; }
+      // すでに通話中で回線も生きているときだけ、後からの着信を断る
+      if (S.call && S.joined && callAlive(S.call)) {
+        try { call.close(); } catch (e) {}
+        return;
+      }
+      if (S.call) { try { S.call.close(); } catch (e) {} }
+      stopTimer();
       S.call = call;
       S.joined = false;
+      S.ended = false;
       $("#callRoom").textContent = "ROOM " + (S.roomCode || "");
       showScreen("Call");
       setCallStatus("接続しています…", false);
@@ -757,6 +773,13 @@ body::before{
     S.peer = peer;
 
     peer.on("open", function(){
+      // 切断をすぐ知らせ合うための制御チャンネル
+      try {
+        var dc = peer.connect(ROOM_PREFIX + code, { reliable: true });
+        S.ctl = dc;
+        bindCtl(dc);
+      } catch (e) { /* 制御チャンネルが張れなくても通話は続行 */ }
+
       var call;
       try {
         call = peer.call(ROOM_PREFIX + code, S.localStream);
@@ -784,7 +807,59 @@ body::before{
 
   /* ---------------- common call binding ---------------- */
 
+  function bindCtl(dc){
+    if (!dc || !dc.on) return;
+    dc.on("data", function(d){
+      if (d && typeof d === "object" && d.type === "bye") onRemoteClosed();
+    });
+  }
+
+  function sendBye(){
+    try { if (S.ctl && S.ctl.open) S.ctl.send({ type: "bye" }); } catch (e) {}
+  }
+
+  function callAlive(call){
+    try {
+      var pc = call && call.peerConnection;
+      if (!pc) return false;
+      var a = pc.connectionState || "", b = pc.iceConnectionState || "";
+      if (a === "failed" || a === "closed" || a === "disconnected") return false;
+      if (b === "failed" || b === "closed" || b === "disconnected") return false;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // 相手が一方的に切った/通信が落ちた場合の検知（PeerJSはcloseを送ってくれない）
+  function watchConnection(call){
+    var pc = call && call.peerConnection;
+    if (!pc || !pc.addEventListener) return;
+    var grace = null;
+    var check = function(){
+      var a = pc.connectionState, b = pc.iceConnectionState;
+      if (a === "connected" || b === "connected" || b === "completed") {
+        if (grace) { clearTimeout(grace); grace = null; }
+        return;
+      }
+      if (a === "failed" || a === "closed" || b === "failed" || b === "closed") {
+        if (grace) { clearTimeout(grace); grace = null; }
+        onRemoteClosed();
+        return;
+      }
+      if (a === "disconnected" || b === "disconnected") {
+        if (grace) return;
+        grace = setTimeout(function(){
+          grace = null;
+          var t1 = pc.connectionState, t2 = pc.iceConnectionState;
+          if (t1 !== "connected" && t2 !== "connected" && t2 !== "completed") onRemoteClosed();
+        }, 4000);
+      }
+    };
+    pc.addEventListener("connectionstatechange", check);
+    pc.addEventListener("iceconnectionstatechange", check);
+  }
+
   function bindCall(call){
+    watchConnection(call);
     call.on("stream", function(remote){
       playRemote(remote);
       if (!S.joined) {
@@ -805,6 +880,9 @@ body::before{
   }
 
   function onRemoteClosed(){
+    if (S.ended) return;
+    S.ended = true;
+    S.ctl = null;
     if (S.role === "host" && S.peer && !S.peer.destroyed) {
       // ホストは待機画面に戻って再参加を受け付ける
       closeCallKeepPeer();
@@ -888,15 +966,20 @@ body::before{
   function hangUp(){
     var wasJoined = S.joined;
     var role = S.role;
-    fullReset();
-    $("#codeInput").value = "";
-    $("#callRoom").textContent = "ROOM ·······";
-    setCallStatus("接続しています…", false);
+    sendBye();                                  // 相手に「切った」を先に伝える
+    setTimeout(function(){
+      fullReset();
+      $("#codeInput").value = "";
+      $("#callRoom").textContent = "ROOM ·······";
+      setCallStatus("接続しています…", false);
+      showScreen("Home");
+    }, 160);
     showScreen("Home");
     if (wasJoined || role) toast("通話を終了しました");
   }
 
   function cancelHost(){
+    sendBye();
     fullReset();
     showScreen("Home");
     toast("ルームを閉じました");
