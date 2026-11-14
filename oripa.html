@@ -57,7 +57,7 @@ input,textarea{-webkit-user-select:text;user-select:text;}
 input,select{font-size:16px;}
 
 /* ---------------- shell ---------------- */
-.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;max-width:480px;margin:0 auto;}
 .topbar{
   position:sticky;top:0;z-index:30;
   display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -97,7 +97,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 
 /* ---------------- tabbar ---------------- */
 .tabbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  position:fixed;left:0;right:0;bottom:0;z-index:40;max-width:480px;margin:0 auto;
   display:flex;gap:4px;
   padding:7px calc(8px + var(--safe-r)) calc(7px + var(--safe-b)) calc(8px + var(--safe-l));
   background:rgba(10,9,20,.88);
@@ -360,18 +360,18 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 
 /* ---------------- open stage ---------------- */
 .stage{
-  position:fixed;inset:0;z-index:50;
+  position:fixed;inset:0;z-index:50;max-width:480px;margin:0 auto;
   display:flex;flex-direction:column;
   padding:calc(6px + var(--safe-t)) 0 calc(8px + var(--safe-b));
-  background:radial-gradient(120% 70% at 50% 35%,rgba(38,22,80,.96) 0%,rgba(8,7,15,.985) 62%,#050409 100%);
-  opacity:0;transition:opacity .26s ease;
+  background:radial-gradient(120% 70% at 50% 35%,#2a1650 0%,#0a0714 62%,#050409 100%);
+  opacity:0;transition:opacity .26s ease;box-shadow:0 0 60px rgba(0,0,0,.7);
 }
 .stage.in{opacity:1;}
 .stage-top{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  display:flex;align-items:center;justify-content:flex-start;gap:9px;
   padding:6px calc(16px + var(--safe-r)) 6px calc(16px + var(--safe-l));
 }
-.stage-pack-name{font-size:11.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.02em;
+.stage-pack-name{flex:1;min-width:0;font-size:11.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.02em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .stage-hit{
   flex:0 0 auto;font-size:10.5px;font-weight:900;color:var(--gold);
@@ -466,20 +466,21 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 
 /* hand of cards */
 .hand{
-  display:flex;gap:14px;align-items:center;
-  width:100%;height:100%;padding:8px 22vw;
+  display:flex;gap:14px;align-items:center;justify-content:flex-start;
+  width:100%;height:100%;padding:8px 16px;
   overflow-x:auto;overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
   scroll-snap-type:x mandatory;
   scrollbar-width:none;
 }
 .hand::-webkit-scrollbar{display:none;}
-.hand.one{padding:8px 12vw;justify-content:center;}
+.hand .card:first-child{margin-left:auto;}
+.hand .card:last-child{margin-right:auto;}
 .card{
-  position:relative;flex:0 0 auto;width:min(56vw,44vh);aspect-ratio:5/7;
+  position:relative;flex:0 0 auto;width:min(56vw,40vh,224px);aspect-ratio:5/7;
   perspective:1200px;scroll-snap-align:center;
 }
-.hand.one .card{width:min(74vw,48vh);}
+.hand.one .card{width:min(70vw,40vh,316px);}
 .card.enter{animation:cardIn .42s cubic-bezier(.2,.9,.3,1) both;}
 @keyframes cardIn{from{opacity:0;transform:translateY(26px) scale(.9);}to{opacity:1;transform:none;}}
 .card-inner{
@@ -549,6 +550,8 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .f-rar{
   font-size:10px;font-weight:900;letter-spacing:.10em;color:var(--rt);
   padding:2px 7px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.06);
   border:1px solid color-mix(in srgb,var(--r1) 55%,transparent);
   background:color-mix(in srgb,var(--r1) 14%,transparent);
 }
@@ -556,13 +559,14 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .f-art{
   flex:1;display:grid;place-items:center;position:relative;margin:4px 10px;
   border-radius:10px;
+  background:repeating-radial-gradient(circle at 50% 52%,rgba(255,255,255,.05) 0 1px,transparent 1px 16px);
   background:
     radial-gradient(circle at 50% 52%,color-mix(in srgb,var(--r1) 26%,transparent),transparent 66%),
     repeating-radial-gradient(circle at 50% 52%,rgba(255,255,255,.05) 0 1px,transparent 1px 16px);
   border:1px solid rgba(255,255,255,.07);
   overflow:hidden;
 }
-.f-art span{font-size:clamp(30px,11vw,56px);line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));}
+.f-art span{font-size:clamp(34px,13vw,72px);line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));}
 .f-art::after{
   content:'';position:absolute;inset:-40%;
   background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.16) 50%,transparent 58%);
@@ -703,7 +707,7 @@ main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) cal
 .res-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);}
 .res-head span{font-size:10px;font-weight:900;letter-spacing:.10em;color:var(--ink-mute);}
 .res-head b{font-size:12px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;}
-.res-list{max-height:31vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.res-list{max-height:26vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .res-row{display:grid;grid-template-columns:7px 1fr auto auto;gap:7px;align-items:center;padding:6px 1px;border-bottom:1px dashed rgba(255,255,255,.06);}
 .res-row:last-child{border-bottom:none;}
 .res-rk{width:7px;height:7px;border-radius:50%;background:linear-gradient(180deg,var(--r1,#aaa),var(--r2,#777));box-shadow:0 0 8px rgba(255,255,255,.20);}
@@ -2238,15 +2242,13 @@ function commitCharge() {
   var bi = budgetInfo(amt);
   var go = function () {
     if (!addCharge(amt)) return;
+    chargeState.need = Math.max(0, chargeState.need - amt);
     if (chargeState.need > 0) {
-      chargeState.need = Math.max(0, chargeState.need - amt);
-      if (chargeState.need === 0) {
-        closeCharge();
-        toast('チャージ完了。オリパが引けます');
-        return;
-      }
+      renderChargeModal();
+      toast('チャージしました。あと ' + fmt(chargeState.need) + 'pt です');
+      return;
     }
-    renderChargeModal();
+    closeCharge();
   };
   if (bi.level === 'over') {
     askConfirm('今月の課金上限（' + yen(bi.budget) + '）を ' + yen(bi.over) +
