@@ -1,0 +1,2677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08070f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="ポケカ風オリジナルパック（オリパ）を引けるシミュレーター。">
+<title>オリパ | ポケカ風オリジナルパック</title>
+<style>
+:root{
+  --ink:#f5f3ff;
+  --ink-soft:#b0aacb;
+  --ink-mute:#726c93;
+  --panel:rgba(255,255,255,.055);
+  --panel-2:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.10);
+  --gold:#ffd76a;
+  --pink:#ff5f9e;
+  --cyan:#5ee7ff;
+  --violet:#a78bfa;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  min-height:100vh;
+  min-height:100dvh;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  color:var(--ink);
+  background:#08070f;
+  background-image:
+    radial-gradient(120% 60% at 50% -8%, rgba(140,90,255,.30) 0%, rgba(90,40,160,.10) 40%, transparent 70%),
+    radial-gradient(90% 50% at 100% 20%, rgba(255,95,158,.16) 0%, transparent 60%),
+    radial-gradient(90% 50% at 0% 45%, rgba(94,231,255,.12) 0%, transparent 60%),
+    linear-gradient(180deg,#0c0a19 0%,#08070f 55%,#0a0813 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overscroll-behavior-y:contain;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  color-scheme:dark;
+}
+body.lock{overflow:hidden;}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+[hidden]{display:none !important;}
+button{touch-action:manipulation;-webkit-appearance:none;appearance:none;cursor:pointer;}
+input,textarea{-webkit-user-select:text;user-select:text;}
+input,select{font-size:16px;}
+
+/* ---------------- shell ---------------- */
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+.topbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:calc(8px + var(--safe-t)) calc(14px + var(--safe-r)) 8px calc(14px + var(--safe-l));
+  background:rgba(10,9,20,.72);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  backdrop-filter:blur(18px) saturate(140%);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;letter-spacing:.02em;}
+.brand .logo{
+  width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:14px;
+  background:conic-gradient(from 210deg,#ff5f9e,#ffb020,#5ee7ff,#a78bfa,#ff5f9e);
+  box-shadow:0 4px 14px rgba(255,95,158,.35);
+}
+.brand small{font-size:10px;font-weight:800;color:var(--ink-mute);letter-spacing:.14em;margin-left:2px;}
+.top-actions{display:flex;align-items:center;gap:8px;}
+.mini-link{
+  font-size:11.5px;font-weight:800;color:var(--ink-soft);text-decoration:none;
+  padding:7px 10px;border-radius:11px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.09);white-space:nowrap;
+}
+.mini-link:active{transform:scale(.95);}
+.icon-btn{
+  width:38px;height:38px;border:none;border-radius:12px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);
+  font-size:16px;line-height:1;display:grid;place-items:center;transition:transform .12s ease;
+  padding:0;
+}
+.icon-btn:active{transform:scale(.9);}
+.icon-btn.off{opacity:.5;}
+
+main{flex:1;padding:0 calc(15px + var(--safe-r)) calc(102px + var(--safe-b)) calc(15px + var(--safe-l));}
+.view{display:none;}
+.view.on{display:block;animation:fadeUp .28s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ---------------- tabbar ---------------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;gap:4px;
+  padding:7px calc(8px + var(--safe-r)) calc(7px + var(--safe-b)) calc(8px + var(--safe-l));
+  background:rgba(10,9,20,.88);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);
+  backdrop-filter:blur(20px) saturate(140%);
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:8px 2px;border:none;border-radius:15px;background:none;
+  color:var(--ink-mute);font-size:10px;font-weight:800;letter-spacing:.02em;
+  transition:color .18s ease,background .18s ease,transform .12s ease;
+}
+.tab i{font-size:19px;font-style:normal;line-height:1;filter:grayscale(.55);transition:filter .18s;}
+.tab.on{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03));}
+.tab.on i{filter:none;}
+.tab:active{transform:scale(.95);}
+
+/* ---------------- draw view : hero pack ---------------- */
+.pack-hero{position:relative;display:grid;place-items:center;padding:22px 0 4px;min-height:238px;}
+.hero-glow{
+  position:absolute;width:210px;height:210px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,95,158,.40),rgba(120,90,255,.24) 45%,transparent 72%);
+  filter:blur(22px);animation:breathe 4s ease-in-out infinite;
+}
+.pack-thumb{
+  position:relative;width:min(57vw,206px);aspect-ratio:5/7;border-radius:15px;
+  transform:rotate(-4deg);
+  background:linear-gradient(158deg,#2a2150 0%,#3d2159 38%,#181131 70%,#0c0a1d 100%);
+  border:1px solid rgba(255,255,255,.20);
+  box-shadow:0 22px 44px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.04) inset,0 0 40px rgba(150,100,255,.20) inset;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  overflow:hidden;
+}
+.pack-thumb::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(58deg,rgba(255,255,255,.055) 0 1px,transparent 1px 8px);
+}
+.pack-thumb::after{
+  content:'';position:absolute;top:-60%;left:-30%;width:70%;height:220%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  transform:rotate(18deg);animation:sheen 4.6s ease-in-out infinite;
+}
+.pt-logo{
+  position:relative;font-size:9px;letter-spacing:.30em;font-weight:900;color:rgba(255,255,255,.70);
+  padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:2px;
+}
+.pt-emoji{position:relative;font-size:40px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));}
+.pt-name{
+  position:relative;font-size:13px;font-weight:900;letter-spacing:.01em;
+  text-align:center;padding:0 12px;line-height:1.35;color:#fff;
+  text-shadow:0 2px 10px rgba(0,0,0,.6);
+}
+.pt-price{
+  position:relative;margin-top:4px;font-size:11px;font-weight:900;color:#12101f;
+  background:linear-gradient(180deg,#ffe9a8,#ffc94d);padding:3px 10px;border-radius:999px;
+  box-shadow:0 4px 12px rgba(255,201,77,.30);
+}
+.pack-thumb .pt-ribbon{
+  position:absolute;top:9px;right:-27px;transform:rotate(38deg);
+  background:linear-gradient(90deg,#ff4d80,#ff8a3c);color:#fff;
+  font-size:8.5px;font-weight:900;letter-spacing:.12em;padding:3px 30px;
+  box-shadow:0 3px 10px rgba(0,0,0,.4);
+}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1.35fr .95fr;gap:9px;margin-top:16px;}
+.stat{
+  position:relative;padding:11px 13px 12px;border-radius:16px;
+  background:var(--panel);border:1px solid var(--line);
+  display:flex;flex-direction:column;gap:3px;overflow:hidden;
+}
+.stat-k{font-size:10.5px;font-weight:800;color:var(--ink-mute);letter-spacing:.06em;}
+.stat-v{display:flex;align-items:baseline;gap:2px;font-variant-numeric:tabular-nums;}
+.stat-v b{font-size:25px;font-weight:900;letter-spacing:-.02em;line-height:1.1;}
+.stat-v small{font-size:11px;font-weight:800;color:var(--ink-mute);margin-left:2px;}
+.bar{margin-top:5px;height:5px;border-radius:99px;background:rgba(255,255,255,.10);overflow:hidden;}
+.bar i{
+  display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#5ee7ff,#a78bfa 55%,#ff5f9e);
+  transition:width .5s cubic-bezier(.2,.8,.2,1);
+}
+.stat-hit .stat-v b{color:var(--gold);text-shadow:0 0 18px rgba(255,215,106,.35);}
+.stat-note{font-size:9.5px;font-weight:700;color:var(--ink-mute);}
+
+.hitline{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;}
+.hitline .hl-label{font-size:10px;font-weight:900;color:var(--ink-mute);letter-spacing:.08em;align-self:center;margin-right:2px;}
+.hl-chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;
+  padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);max-width:100%;
+}
+.hl-chip em{font-style:normal;font-size:9.5px;font-weight:900;opacity:.85;}
+.hl-chip .n{font-variant-numeric:tabular-nums;}
+
+/* draw buttons */
+.draw-btns{display:flex;gap:9px;margin-top:18px;}
+.dbtn{
+  position:relative;flex:1;border:none;border-radius:17px;padding:13px 6px 12px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:linear-gradient(180deg,#2b2350,#1a1633);
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;font-weight:900;letter-spacing:.01em;
+  box-shadow:0 10px 22px rgba(0,0,0,.40),0 1px 0 rgba(255,255,255,.12) inset;
+  transition:transform .1s ease,opacity .2s;
+  overflow:hidden;
+}
+.dbtn .n{font-size:15px;line-height:1.15;}
+.dbtn .p{font-size:11px;font-weight:800;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+.dbtn:active{transform:scale(.965);}
+.dbtn.primary{
+  background:linear-gradient(180deg,#ff6aa4,#e0356f 55%,#b92157);
+  border-color:rgba(255,255,255,.24);
+  box-shadow:0 14px 30px rgba(224,53,111,.42),0 1px 0 rgba(255,255,255,.30) inset;
+}
+.dbtn.primary .p{color:rgba(255,255,255,.88);}
+.dbtn.primary::after{
+  content:'';position:absolute;top:-50%;left:-40%;width:46%;height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:rotate(16deg);animation:sheen 3.4s ease-in-out infinite;
+}
+.dbtn[disabled]{opacity:.34;box-shadow:none;border-color:rgba(255,255,255,.08);}
+.dbtn[disabled]::after{display:none;}
+
+.sold-out{
+  margin-top:16px;padding:15px;border-radius:16px;text-align:center;
+  background:linear-gradient(180deg,rgba(255,95,158,.16),rgba(255,95,158,.05));
+  border:1px solid rgba(255,95,158,.30);
+}
+.sold-out b{display:block;font-size:15px;margin-bottom:4px;}
+.sold-out span{font-size:11.5px;color:var(--ink-soft);}
+.sold-out .btn{margin-top:11px;}
+
+.foot-note{margin:16px 2px 0;font-size:10px;line-height:1.6;color:var(--ink-mute);}
+
+/* ---------------- shared bits ---------------- */
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:20px 2px 10px;}
+.sec-head h2{margin:0;font-size:13px;font-weight:900;letter-spacing:.04em;color:var(--ink-soft);}
+.btn{
+  border:none;border-radius:13px;padding:10px 14px;font-size:13px;font-weight:900;
+  background:linear-gradient(180deg,#2b2350,#1a1633);border:1px solid rgba(255,255,255,.13);color:#fff;
+  transition:transform .1s ease;
+}
+.btn:active{transform:scale(.96);}
+.btn-mini{padding:6px 11px;font-size:11.5px;border-radius:10px;}
+.btn-ghost{background:rgba(255,255,255,.06);}
+.btn-danger{color:#ff8fb4;border-color:rgba(255,95,158,.32);background:rgba(255,95,158,.10);}
+.btn-accent{background:linear-gradient(180deg,#ff6aa4,#d92e68);border-color:rgba(255,255,255,.22);}
+.btn[disabled]{opacity:.4;}
+
+/* ---------------- manage ---------------- */
+.setchips{display:flex;gap:7px;overflow-x:auto;padding:14px 2px 4px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.setchips::-webkit-scrollbar{display:none;}
+.chip{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+  padding:9px 12px;border-radius:14px;font-size:12px;font-weight:800;
+  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);color:var(--ink-soft);
+  white-space:nowrap;
+}
+.chip small{font-size:9.5px;font-weight:900;color:var(--ink-mute);font-variant-numeric:tabular-nums;}
+.chip.on{
+  color:#fff;background:linear-gradient(180deg,rgba(255,106,164,.30),rgba(167,139,250,.18));
+  border-color:rgba(255,141,180,.55);box-shadow:0 6px 18px rgba(255,95,158,.20);
+}
+.chip.on small{color:rgba(255,255,255,.8);}
+
+.row-actions{display:flex;gap:7px;margin:8px 0 4px;}
+.row-actions .btn{flex:1;padding:9px 6px;font-size:11.5px;}
+
+.editor{margin-top:14px;padding:14px;border-radius:19px;background:var(--panel);border:1px solid var(--line);}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.field > span{font-size:10.5px;font-weight:900;color:var(--ink-mute);letter-spacing:.06em;}
+.field input,.field select{
+  width:100%;padding:11px 12px;border-radius:12px;
+  background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.11);
+  color:var(--ink);font-weight:700;outline:none;
+  transition:border-color .18s,background .18s;
+}
+.field input:focus,.field select:focus{border-color:rgba(255,141,180,.6);background:rgba(0,0,0,.42);}
+.field-row{display:grid;grid-template-columns:76px 1fr;gap:9px;}
+.field-emoji input{text-align:center;font-size:18px;padding:9px 4px;}
+
+.items{display:flex;flex-direction:column;gap:9px;}
+.item{
+  padding:11px;border-radius:14px;
+  background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.08);
+}
+.item-top{display:flex;align-items:center;gap:8px;}
+.i-name{
+  flex:1;min-width:0;padding:9px 10px;border-radius:10px;font-size:14px;font-weight:800;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:#fff;outline:none;
+}
+.i-name:focus{border-color:rgba(255,141,180,.55);}
+.icon-x{
+  flex:0 0 auto;width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,95,158,.28);
+  background:rgba(255,95,158,.10);color:#ff8fb4;font-size:13px;display:grid;place-items:center;padding:0;
+}
+.item-grid{display:grid;grid-template-columns:1fr 1fr 62px 52px;gap:7px;margin-top:8px;align-items:end;}
+.item-grid label{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.item-grid label > span{font-size:9px;font-weight:800;color:var(--ink-mute);}
+.item-grid select,.item-grid input[type=number]{
+  width:100%;min-width:0;padding:8px 6px;border-radius:9px;font-size:13px;font-weight:800;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#fff;outline:none;
+  text-align:center;
+}
+.item-left{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px;}
+.item-left span{font-size:9px;font-weight:800;color:var(--ink-mute);}
+.item-left b{font-size:14px;font-weight:900;color:var(--cyan);font-variant-numeric:tabular-nums;}
+.items-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-top:11px;padding-top:11px;border-top:1px dashed rgba(255,255,255,.10);
+  font-size:11.5px;font-weight:800;color:var(--ink-soft);
+}
+.items-foot b{color:#fff;font-size:13px;font-variant-numeric:tabular-nums;}
+.items-foot .fhit{color:var(--gold);}
+.empty{padding:16px;text-align:center;font-size:12px;color:var(--ink-mute);}
+
+/* ---------------- history ---------------- */
+.hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px;}
+.hstat{
+  padding:12px 8px;border-radius:15px;text-align:center;
+  background:var(--panel);border:1px solid var(--line);
+}
+.hstat span{display:block;font-size:9.5px;font-weight:800;color:var(--ink-mute);letter-spacing:.05em;margin-bottom:3px;}
+.hstat b{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.rarity-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;}
+.rc{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:900;
+  padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.13);
+  background:rgba(255,255,255,.05);
+}
+.rc i{font-style:normal;font-variant-numeric:tabular-nums;}
+
+.hlist{display:flex;flex-direction:column;gap:8px;}
+.hitem{padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);}
+.hitem-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;}
+.hitem-top b{font-size:11.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hitem-top span{flex:0 0 auto;font-size:9.5px;font-weight:700;color:var(--ink-mute);font-variant-numeric:tabular-nums;}
+.hcards{display:flex;flex-wrap:wrap;gap:5px;}
+.hc{
+  display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;
+  padding:3px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);max-width:100%;
+}
+.hc em{font-style:normal;font-size:8.5px;font-weight:900;opacity:.8;letter-spacing:.03em;}
+
+/* rank color tokens */
+.rk-rainbow{--r1:#ff4d80;--r2:#ffd166;--r3:#4ade80;--r4:#38bdf8;--r5:#a78bfa;--rt:#ffe6a3;}
+.rk-gold{--r1:#ffd76a;--r2:#f0a52b;--rt:#ffe3a1;}
+.rk-purple{--r1:#b98cff;--r2:#7c4dff;--rt:#ddccff;}
+.rk-blue{--r1:#6fd6ff;--r2:#2f7bff;--rt:#c8ecff;}
+.rk-white{--r1:#e6e9f2;--r2:#aab0c6;--rt:#f2f4fb;}
+.rc.rk-rainbow,.hc.rk-rainbow,.rk-chip.rk-rainbow{color:#ffe6a3;border-color:rgba(255,209,102,.45);
+  background:linear-gradient(90deg,rgba(255,77,128,.16),rgba(255,209,102,.14),rgba(74,222,128,.14),rgba(56,189,248,.14),rgba(167,139,250,.16));}
+.rc.rk-gold,.hc.rk-gold,.rk-chip.rk-gold{color:#ffd76a;border-color:rgba(255,215,106,.42);background:rgba(255,215,106,.10);}
+.rc.rk-purple,.hc.rk-purple,.rk-chip.rk-purple{color:#c9aaff;border-color:rgba(185,140,255,.38);background:rgba(185,140,255,.10);}
+.rc.rk-blue,.hc.rk-blue,.rk-chip.rk-blue{color:#8fe0ff;border-color:rgba(111,214,255,.34);background:rgba(111,214,255,.10);}
+.rc.rk-white,.hc.rk-white,.rk-chip.rk-white{color:#d5d9e6;border-color:rgba(213,217,230,.26);background:rgba(213,217,230,.06);}
+
+/* ---------------- open stage ---------------- */
+.stage{
+  position:fixed;inset:0;z-index:50;
+  display:flex;flex-direction:column;
+  padding:calc(6px + var(--safe-t)) 0 calc(8px + var(--safe-b));
+  background:radial-gradient(120% 70% at 50% 35%,rgba(38,22,80,.96) 0%,rgba(8,7,15,.985) 62%,#050409 100%);
+  opacity:0;transition:opacity .26s ease;
+}
+.stage.in{opacity:1;}
+.stage-top{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px calc(16px + var(--safe-r)) 6px calc(16px + var(--safe-l));
+}
+.stage-pack-name{font-size:11.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stage-hit{
+  flex:0 0 auto;font-size:10.5px;font-weight:900;color:var(--gold);
+  padding:5px 10px;border-radius:999px;background:rgba(255,215,106,.12);
+  border:1px solid rgba(255,215,106,.30);
+}
+.stage-mid{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+
+/* aura */
+.aura{
+  position:absolute;left:50%;top:50%;width:340px;height:340px;margin:-170px 0 0 -170px;
+  border-radius:50%;filter:blur(30px);pointer-events:none;opacity:.95;
+  transition:background .45s ease,opacity .45s ease;
+}
+.aura.blue{background:radial-gradient(circle,rgba(94,231,255,.55),rgba(70,110,255,.28) 46%,transparent 72%);animation:breathe 2.8s ease-in-out infinite;}
+.aura.gold{background:radial-gradient(circle,rgba(255,215,106,.62),rgba(255,150,40,.32) 46%,transparent 72%);animation:breathe 2.1s ease-in-out infinite;}
+.aura.rainbow{background:radial-gradient(circle,rgba(255,190,240,.55),rgba(140,110,255,.34) 46%,transparent 74%);animation:breathe 1.7s ease-in-out infinite;}
+.auraSpin{
+  position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;
+  border-radius:50%;pointer-events:none;opacity:0;transition:opacity .5s ease;
+  background:conic-gradient(from 0deg,#ff4d80,#ffd166,#4ade80,#38bdf8,#a78bfa,#ff4d80);
+  filter:blur(26px);
+}
+.auraSpin.on{opacity:.42;animation:spin 2.6s linear infinite;}
+
+.packWrap{
+  position:relative;display:grid;place-items:center;
+  width:100%;padding:18px 0 10px;
+  touch-action:pan-x;
+}
+.pack{
+  position:relative;width:min(68vw,262px);aspect-ratio:5/7;
+  transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .45s ease,filter .45s;
+  will-change:transform;
+}
+.pack.shake{animation:packShake .34s ease-in-out;}
+.pack.ripped{transform:translateY(-6%) scale(1.02);}
+.pack.gone{transform:translateY(-4%) scale(1.28);opacity:0;filter:blur(6px);}
+
+.packBody{
+  position:absolute;inset:0;border-radius:17px;overflow:hidden;
+  background:linear-gradient(158deg,#2e2456 0%,#42245e 36%,#1a1236 72%,#0b0919 100%);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 26px 60px rgba(0,0,0,.72),0 0 60px rgba(160,110,255,.22) inset;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+}
+.packBody::before{
+  content:'';position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(58deg,rgba(255,255,255,.06) 0 1px,transparent 1px 9px),
+    radial-gradient(circle at 50% 30%,rgba(255,255,255,.14),transparent 60%);
+}
+.packBody::after{
+  content:'';position:absolute;top:-60%;left:-40%;width:62%;height:230%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent);
+  transform:rotate(18deg);animation:sheen 3.8s ease-in-out infinite;
+}
+.pk-logo{position:relative;font-size:9.5px;letter-spacing:.34em;font-weight:900;color:rgba(255,255,255,.72);
+  padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.24);}
+.pk-emoji{position:relative;font-size:58px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));}
+.pk-name{position:relative;font-size:16px;font-weight:900;text-align:center;padding:0 16px;line-height:1.3;
+  text-shadow:0 3px 14px rgba(0,0,0,.7);}
+.pk-price{position:relative;font-size:12px;font-weight:900;color:#12101f;
+  background:linear-gradient(180deg,#ffe9a8,#ffc94d);padding:4px 13px;border-radius:999px;}
+.pk-serial{position:absolute;bottom:10px;right:12px;font-size:8px;letter-spacing:.16em;
+  font-weight:800;color:rgba(255,255,255,.35);}
+
+/* tear strip */
+.packTop{
+  position:absolute;left:-2px;right:-2px;top:-2px;height:46px;z-index:3;
+  background:linear-gradient(180deg,#f4f1ff,#cfc7e8 60%,#a99fd0);
+  clip-path:polygon(0 0,100% 0,100% 74%,96% 88%,92% 74%,88% 90%,84% 74%,80% 90%,76% 74%,72% 90%,68% 74%,64% 90%,60% 74%,56% 90%,52% 74%,48% 90%,44% 74%,40% 90%,36% 74%,32% 90%,28% 74%,24% 90%,20% 74%,16% 90%,12% 74%,8% 90%,4% 78%,0 88%);
+  border-radius:17px 17px 2px 2px;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:7px;
+  box-shadow:0 6px 14px rgba(0,0,0,.35);
+  transform-origin:50% 0%;
+  transition:transform .52s cubic-bezier(.5,-0.2,.4,1),opacity .5s ease;
+}
+.packTop span{font-size:8.5px;font-weight:900;letter-spacing:.32em;color:#3b2f63;}
+.pack.ripped .packTop{transform:translateY(-135%) rotate(-13deg) scale(1.04);opacity:0;}
+.packFlash{
+  position:absolute;inset:-40px;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,.35) 40%,transparent 70%);
+}
+.packFlash.on{animation:flashOut .55s ease-out;}
+.hint{
+  position:absolute;left:0;right:0;bottom:-6px;text-align:center;
+  font-size:11.5px;font-weight:800;color:rgba(255,255,255,.66);letter-spacing:.02em;
+  animation:pulseHint 1.9s ease-in-out infinite;
+}
+.hint b{color:#fff;}
+
+/* hand of cards */
+.hand{
+  display:flex;gap:14px;align-items:center;
+  width:100%;height:100%;padding:8px 22vw;
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+}
+.hand::-webkit-scrollbar{display:none;}
+.hand.one{padding:8px 12vw;justify-content:center;}
+.card{
+  position:relative;flex:0 0 auto;width:min(56vw,44vh);aspect-ratio:5/7;
+  perspective:1200px;scroll-snap-align:center;
+}
+.hand.one .card{width:min(74vw,48vh);}
+.card.enter{animation:cardIn .42s cubic-bezier(.2,.9,.3,1) both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(26px) scale(.9);}to{opacity:1;transform:none;}}
+.card-inner{
+  position:relative;width:100%;height:100%;transform-style:preserve-3d;
+  transition:transform .68s cubic-bezier(.2,.85,.25,1);
+  will-change:transform;
+}
+.card.flipped .card-inner{transform:rotateY(180deg);}
+.card:active .card-inner{transform:scale(.985);}
+.card.flipped:active .card-inner{transform:rotateY(180deg) scale(.985);}
+.face{
+  position:absolute;inset:0;border-radius:16px;overflow:hidden;
+  -webkit-backface-visibility:hidden;backface-visibility:hidden;
+  transform:translateZ(0.01px);
+}
+/* back */
+.face.back{
+  background:
+    radial-gradient(circle at 50% 42%,rgba(130,96,255,.55),rgba(26,18,60,.96) 52%,#07060f 100%);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 20px 44px rgba(0,0,0,.62),0 0 46px rgba(130,96,255,.24) inset;
+  display:grid;place-items:center;
+}
+.face.back::before{
+  content:'';position:absolute;inset:7px;border-radius:11px;
+  border:1px solid rgba(255,255,255,.13);
+}
+.face.back::after{
+  content:'';position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 1px,transparent 1px 10px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.03) 0 1px,transparent 1px 14px);
+}
+.b-emblem{
+  position:relative;z-index:2;width:44%;aspect-ratio:1;border-radius:50%;
+  display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.22),rgba(255,255,255,.04) 60%,transparent 70%);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 0 30px rgba(167,139,250,.40),0 0 60px rgba(94,231,255,.18) inset;
+  font-size:clamp(20px,7vw,34px);
+  color:#fff;font-weight:900;letter-spacing:.02em;
+  text-shadow:0 0 16px rgba(255,255,255,.6);
+}
+.b-txt{
+  position:absolute;bottom:9%;z-index:2;font-size:8.5px;font-weight:900;letter-spacing:.42em;
+  color:rgba(255,255,255,.48);
+}
+.b-top{position:absolute;top:7%;z-index:2;font-size:8px;font-weight:900;letter-spacing:.28em;color:rgba(255,255,255,.34);}
+/* front */
+.face.front{
+  transform:rotateY(180deg);
+  background:
+    radial-gradient(circle at 50% 34%,rgba(255,255,255,.10),transparent 62%),
+    linear-gradient(170deg,#1d1830 0%,#100c1e 58%,#0a0817 100%);
+  border:1px solid rgba(255,255,255,.20);
+  box-shadow:0 20px 44px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;
+}
+.f-band{
+  height:5px;flex:0 0 auto;
+  background:linear-gradient(90deg,var(--r1),var(--r2),var(--r1));
+}
+.f-top{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:8px 10px 0;
+}
+.f-rar{
+  font-size:10px;font-weight:900;letter-spacing:.10em;color:var(--rt);
+  padding:2px 7px;border-radius:6px;
+  border:1px solid color-mix(in srgb,var(--r1) 55%,transparent);
+  background:color-mix(in srgb,var(--r1) 14%,transparent);
+}
+.f-idx{font-size:8.5px;font-weight:800;color:rgba(255,255,255,.32);letter-spacing:.1em;}
+.f-art{
+  flex:1;display:grid;place-items:center;position:relative;margin:4px 10px;
+  border-radius:10px;
+  background:
+    radial-gradient(circle at 50% 52%,color-mix(in srgb,var(--r1) 26%,transparent),transparent 66%),
+    repeating-radial-gradient(circle at 50% 52%,rgba(255,255,255,.05) 0 1px,transparent 1px 16px);
+  border:1px solid rgba(255,255,255,.07);
+  overflow:hidden;
+}
+.f-art span{font-size:clamp(30px,11vw,56px);line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));}
+.f-art::after{
+  content:'';position:absolute;inset:-40%;
+  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.16) 50%,transparent 58%);
+  transform:translateX(-40%);
+}
+.card.flipped .f-art::after{animation:artSheen .9s ease-out .12s;}
+.f-name{
+  flex:0 0 auto;padding:8px 10px 9px;font-size:13px;font-weight:900;line-height:1.25;
+  text-align:center;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.f-foot{display:flex;justify-content:center;padding:0 10px 10px;}
+.rk-chip{
+  font-size:9.5px;font-weight:900;padding:2.5px 8px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+}
+.f-holo{
+  position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:conic-gradient(from 0deg,#ff4d80,#ffd166,#4ade80,#38bdf8,#a78bfa,#ff4d80);
+  mix-blend-mode:color-dodge;
+  transition:opacity .4s ease;
+}
+.card.flipped .f-holo{opacity:.30;animation:spin 4.2s linear infinite;}
+.f-spark{
+  position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:
+    radial-gradient(circle at 22% 26%,rgba(255,255,255,.95) 0 1.5px,transparent 2px),
+    radial-gradient(circle at 74% 18%,rgba(255,255,255,.85) 0 1px,transparent 2px),
+    radial-gradient(circle at 62% 70%,rgba(255,255,255,.9) 0 1.5px,transparent 2px),
+    radial-gradient(circle at 34% 78%,rgba(255,255,255,.8) 0 1px,transparent 2px),
+    radial-gradient(circle at 86% 52%,rgba(255,255,255,.9) 0 1px,transparent 2px),
+    radial-gradient(circle at 12% 58%,rgba(255,255,255,.75) 0 1px,transparent 2px);
+}
+.card.holoed .f-spark{opacity:1;animation:twinkle 1.15s ease-in-out infinite alternate;}
+.card.holoed{filter:drop-shadow(0 0 18px rgba(255,215,106,.55));}
+
+.stage-actions{
+  display:flex;gap:9px;padding:10px calc(18px + var(--safe-r)) 2px calc(18px + var(--safe-l));
+}
+.stage-actions .btn{flex:1;padding:14px 8px;font-size:13.5px;border-radius:16px;}
+
+/* ---------------- modal / toast ---------------- */
+.modal{
+  position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;
+  background:rgba(4,3,10,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  animation:fade .18s ease;
+}
+.modal-card{
+  width:100%;max-width:320px;padding:20px;border-radius:20px;
+  background:linear-gradient(180deg,#1c1733,#120f22);
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 26px 60px rgba(0,0,0,.7);
+}
+.modal-card p{margin:0 0 16px;font-size:13.5px;line-height:1.6;font-weight:700;}
+.modal-btns{display:flex;gap:9px;}
+.modal-btns .btn{flex:1;padding:12px 8px;}
+.toast{
+  position:fixed;left:50%;bottom:calc(96px + var(--safe-b));transform:translate(-50%,10px);
+  z-index:90;padding:10px 16px;border-radius:13px;font-size:12px;font-weight:800;
+  background:rgba(24,20,44,.96);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;pointer-events:none;
+  transition:opacity .22s ease,transform .22s ease;white-space:nowrap;max-width:86vw;
+}
+.toast.on{opacity:1;transform:translate(-50%,0);}
+
+#confetti{position:fixed;inset:0;z-index:70;pointer-events:none;}
+
+/* ================= wallet / charge / result ================= */
+.brand-wrap{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.brand-sub{font-size:8.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-mute);padding-left:34px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.wchip{
+  display:flex;align-items:center;gap:5px;padding:6px 6px 6px 11px;border-radius:13px;
+  border:1px solid rgba(255,215,106,.40);color:#ffe6a3;
+  background:linear-gradient(180deg,rgba(255,215,106,.20),rgba(255,215,106,.06));
+  font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;
+  transition:transform .1s ease;white-space:nowrap;
+}
+.wchip:active{transform:scale(.95);}
+.wchip b{color:#fff;font-size:14px;letter-spacing:-.01em;}
+.wchip .u{font-size:9.5px;font-weight:900;opacity:.85;margin-left:-2px;}
+.wchip .plus{
+  width:19px;height:19px;border-radius:7px;display:grid;place-items:center;
+  font-size:12px;font-weight:900;color:#2a1b00;line-height:1;
+  background:linear-gradient(180deg,#ffe9a8,#ffc94d);box-shadow:0 2px 6px rgba(255,201,77,.35);
+}
+.wchip.zero{border-color:rgba(255,95,158,.48);background:linear-gradient(180deg,rgba(255,95,158,.22),rgba(255,95,158,.06));color:#ffb3cd;}
+.wchip.zero .plus{background:linear-gradient(180deg,#ffd0e0,#ff7aa8);color:#3a0018;}
+
+/* draw view : wallet line */
+.wl{margin-top:13px;padding:11px 13px 12px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
+.wl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:11px;font-weight:800;color:var(--ink-mute);}
+.wl-top .b{display:flex;align-items:baseline;gap:3px;}
+.wl-top b{font-size:16px;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.wl-top i{font-style:normal;font-size:10px;font-weight:900;color:var(--gold);}
+.bar.sm{height:4px;margin-top:8px;}
+.bar i.warn{background:linear-gradient(90deg,#ffd166,#ff9f43);}
+.bar i.over{background:linear-gradient(90deg,#ff7a9e,#ff2d55);}
+.wl-note{margin-top:7px;font-size:10px;font-weight:800;color:var(--ink-mute);line-height:1.5;font-variant-numeric:tabular-nums;}
+.wl-note.alert{color:#ff8fb4;}
+
+/* section card */
+.section{margin-top:14px;padding:14px;border-radius:19px;background:var(--panel);border:1px solid var(--line);}
+.budgetbar{margin-top:9px;}
+.bb-top{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:800;color:var(--ink-mute);margin-bottom:5px;font-variant-numeric:tabular-nums;}
+.bb-top b{color:#fff;}
+.bb-note{margin-top:6px;font-size:10px;font-weight:800;color:var(--ink-mute);line-height:1.5;}
+.bb-note.alert{color:#ff8fb4;}
+
+/* summary 2x2 */
+.sum4{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sm{padding:11px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);}
+.sm span{display:block;font-size:9.5px;font-weight:800;color:var(--ink-mute);margin-bottom:2px;letter-spacing:.03em;}
+.sm b{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.sm b.good{color:#6ee7a8;}
+.sm b.warn{color:#ffd166;}
+.sm b.bad{color:#ff8fb4;}
+
+/* charge history */
+.citem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);margin-bottom:6px;font-size:11.5px;font-weight:800;}
+.citem .amt2{color:var(--gold);font-variant-numeric:tabular-nums;}
+.citem .tm{color:var(--ink-mute);font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+.hitem-btns{display:flex;gap:6px;margin-top:8px;}
+.hitem-btns .btn{flex:1;padding:7px 6px;font-size:10.5px;border-radius:9px;}
+.hstate{font-size:9.5px;font-weight:900;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--ink-mute);}
+.hstate.redeem{color:#ffe3a1;border-color:rgba(255,209,102,.40);background:rgba(255,209,102,.10);}
+.hstate.keep{color:#a5e4ff;border-color:rgba(111,214,255,.34);background:rgba(111,214,255,.10);}
+
+/* stage : points chip + result panel */
+.stage-pt{font-size:11px;font-weight:900;color:#ffe6a3;padding:5px 9px;border-radius:999px;
+  background:rgba(255,215,106,.14);border:1px solid rgba(255,215,106,.30);
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.result{
+  margin:0 calc(14px + var(--safe-r)) 0 calc(14px + var(--safe-l));
+  padding:10px 12px;border-radius:16px;
+  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.res-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);}
+.res-head span{font-size:10px;font-weight:900;letter-spacing:.10em;color:var(--ink-mute);}
+.res-head b{font-size:12px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;}
+.res-list{max-height:31vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.res-row{display:grid;grid-template-columns:7px 1fr auto auto;gap:7px;align-items:center;padding:6px 1px;border-bottom:1px dashed rgba(255,255,255,.06);}
+.res-row:last-child{border-bottom:none;}
+.res-rk{width:7px;height:7px;border-radius:50%;background:linear-gradient(180deg,var(--r1,#aaa),var(--r2,#777));box-shadow:0 0 8px rgba(255,255,255,.20);}
+.res-name{font-size:11.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.res-row.undecided .res-name{color:var(--ink-soft);}
+.res-val{font-size:10.5px;font-weight:900;color:#ffe3a1;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.res-val.mute{color:var(--ink-mute);}
+.seg{display:flex;border-radius:9px;overflow:hidden;border:1px solid rgba(255,255,255,.14);flex:0 0 auto;}
+.seg button{padding:5px 7px;font-size:9.5px;font-weight:900;background:rgba(255,255,255,.05);border:none;color:var(--ink-mute);white-space:nowrap;}
+.seg button.on[data-st="redeem"]{background:linear-gradient(180deg,#ffd166,#f0a52b);color:#241a00;}
+.seg button.on[data-st="keep"]{background:linear-gradient(180deg,#7dd3fc,#3b82f6);color:#04121f;}
+.seg button[disabled]{opacity:.30;}
+
+/* charge modal */
+.charge-card{max-width:364px;max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.cm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.cm-head b{display:block;font-size:15px;font-weight:900;}
+.cm-head span{display:block;margin-top:2px;font-size:9.5px;font-weight:700;color:var(--ink-mute);line-height:1.4;}
+.cm-balance{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cm-balance > div{padding:9px 11px;border-radius:12px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.08);}
+.cm-balance span{display:block;font-size:9px;font-weight:800;color:var(--ink-mute);}
+.cm-balance b{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;}
+.cm-need{margin:11px 0 0;padding:9px 11px;border-radius:11px;font-size:11px;font-weight:800;line-height:1.45;
+  color:#ffb3cd;background:rgba(255,95,158,.14);border:1px solid rgba(255,95,158,.34);}
+.cm-amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px;}
+.amt{padding:10px 3px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);
+  display:flex;flex-direction:column;align-items:center;gap:1px;color:#fff;transition:transform .1s ease;}
+.amt:active{transform:scale(.95);}
+.amt b{font-size:13px;font-weight:900;font-variant-numeric:tabular-nums;}
+.amt span{font-size:8.5px;font-weight:800;color:var(--ink-mute);}
+.amt.on{border-color:rgba(255,214,106,.72);background:linear-gradient(180deg,rgba(255,215,106,.22),rgba(255,215,106,.05));box-shadow:0 0 0 2px rgba(255,215,106,.14);}
+.cm-custom{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:9px;}
+.cm-custom input{width:100%;padding:10px 11px;border-radius:11px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.11);color:#fff;font-weight:800;outline:none;}
+.cm-custom input:focus{border-color:rgba(255,214,106,.6);}
+.cm-custom .btn{padding:10px 12px;font-size:12px;}
+.cm-preview{margin-top:11px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.09);font-size:10.5px;font-weight:800;color:var(--ink-soft);line-height:1.6;font-variant-numeric:tabular-nums;}
+.cm-preview b{color:#fff;}
+.cm-preview .alert{color:#ffb3cd;}
+.cm-preview .over{color:#ff5f8d;font-weight:900;}
+.cm-go{width:100%;margin-top:10px;padding:13px;border-radius:14px;font-size:13.5px;}
+.cm-foot{margin-top:9px;font-size:9px;font-weight:700;color:var(--ink-mute);line-height:1.5;text-align:center;}
+
+/* item editor : value column */
+.item-grid{grid-template-columns:1fr .92fr 54px 72px;}
+.left-badge{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:3px;font-size:8.5px;font-weight:900;color:var(--ink-mute);}
+.left-badge b{font-size:12px;color:var(--cyan);font-variant-numeric:tabular-nums;}
+.item-grid label > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.85;}50%{transform:scale(1.09);opacity:1;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes sheen{0%{transform:translateX(-120%) rotate(18deg);}55%,100%{transform:translateX(320%) rotate(18deg);}}
+@keyframes artSheen{from{transform:translateX(-55%);}to{transform:translateX(55%);}}
+@keyframes flashOut{0%{opacity:0;transform:scale(.4);}25%{opacity:.95;transform:scale(1);}100%{opacity:0;transform:scale(1.5);}}
+@keyframes packShake{0%,100%{transform:translate(0,0) rotate(0);}20%{transform:translate(-4px,2px) rotate(-1.4deg);}45%{transform:translate(4px,-2px) rotate(1.4deg);}70%{transform:translate(-3px,1px) rotate(-.8deg);}}
+@keyframes pulseHint{0%,100%{opacity:.55;}50%{opacity:1;}}
+@keyframes twinkle{from{opacity:.35;transform:scale(1);}to{opacity:1;transform:scale(1.04);}}
+@keyframes fade{from{opacity:0;}to{opacity:1;}}
+@keyframes pop{0%{transform:scale(.5);opacity:0;}60%{transform:scale(1.06);opacity:1;}100%{transform:scale(1);opacity:1;}}
+
+@media (max-width:359px){
+  .stat-v b{font-size:22px;}
+  .dbtn .n{font-size:13.5px;}
+  .item-grid{grid-template-columns:1fr 1fr 54px 46px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.08s !important;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand">
+        <span class="logo">🎴</span>
+        <span>オリパ</span>
+        <small>ORIPA</small>
+      </div>
+      <div class="brand-sub" id="hdCharged">累計 ¥0</div>
+    </div>
+    <div class="top-actions">
+      <button class="wchip" id="walletChip" aria-label="ポイントをチャージ">
+        <b id="hdPts">0</b><span class="u">pt</span><span class="plus">＋</span>
+      </button>
+      <a class="icon-btn" href="./index.html" aria-label="ガチャアプリへ" title="ガチャアプリへ" style="text-decoration:none">🎰</a>
+      <button class="icon-btn" id="muteBtn" aria-label="サウンド切替" title="サウンド">🔊</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== 引く ===== -->
+    <section class="view on" id="view-draw">
+      <div class="pack-hero">
+        <div class="hero-glow"></div>
+        <div class="pack-thumb" id="heroPack">
+          <div class="pt-ribbon">ORIGINAL</div>
+          <div class="pt-logo">ORIPA</div>
+          <div class="pt-emoji" id="heroEmoji">⚡</div>
+          <div class="pt-name" id="heroName">ピカピカオリパ</div>
+          <div class="pt-price" id="heroPrice">1口 ¥500</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-k">残り口数</span>
+          <span class="stat-v"><b id="statLeft">30</b><small id="statTotal">/ 30口</small></span>
+          <div class="bar"><i id="statBar" style="width:100%"></i></div>
+        </div>
+        <div class="stat stat-hit">
+          <span class="stat-k">当たり残</span>
+          <span class="stat-v"><b id="statHit">4</b><small>口</small></span>
+          <span class="stat-note">虹・金ランク</span>
+        </div>
+      </div>
+
+      <div class="wl" id="walletLine"></div>
+
+      <div class="hitline" id="hitLine"></div>
+
+      <div class="draw-btns" id="drawBtns"></div>
+      <div id="soldOut" class="sold-out" hidden>
+        <b>このオリパは完売しました 🎉</b>
+        <span>全口数が引かれています。補充してまた遊べます。</span><br>
+        <button class="btn btn-accent" id="refillBtn">全口数補充する</button>
+      </div>
+
+      <p class="foot-note">
+        ※このアプリはお遊び用のオリパ・シミュレーターです。実際の課金や決済、商品の発送は一切ありません。データはこの端末内（localStorage）にだけ保存されます。
+      </p>
+    </section>
+
+    <!-- ===== 中身・作成 ===== -->
+    <section class="view" id="view-manage">
+      <div class="setchips" id="setChips"></div>
+      <div class="row-actions">
+        <button class="btn btn-ghost" id="newSetBtn">＋ 新規作成</button>
+        <button class="btn btn-ghost" id="resetSetBtn">全口補充</button>
+        <button class="btn btn-ghost btn-danger" id="delSetBtn">削除</button>
+      </div>
+
+      <div class="editor" id="editor">
+        <div class="field-row">
+          <label class="field field-emoji"><span>絵文字</span><input id="edEmoji" maxlength="4" value="⚡"></label>
+          <label class="field"><span>オリパ名</span><input id="edName" value="ピカピカオリパ"></label>
+        </div>
+        <label class="field"><span>1口価格（円）</span>
+          <input id="edPrice" type="number" inputmode="numeric" min="0" step="10" value="500">
+        </label>
+
+        <div class="sec-head" style="margin:6px 0 9px;">
+          <h2>中身（封入カード）</h2>
+          <button class="btn btn-mini" id="addItemBtn">＋ 追加</button>
+        </div>
+        <div class="items" id="itemList"></div>
+        <div class="items-foot" id="itemsFoot"></div>
+        <p class="foot-note" style="margin-top:10px;">
+          ランクが「虹」「金」のカードが当たり扱いになります（当たり残数に反映）。封入枚数を増減すると残り口数も連動します。「推定価値」は還元ptの計算に使います。
+        </p>
+      </div>
+
+      <div class="section" id="budgetSection">
+        <div class="sec-head" style="margin:0 0 9px;"><h2>予算・データ管理</h2></div>
+        <label class="field"><span>月の課金上限（円）</span>
+          <input id="edBudget" type="number" inputmode="numeric" min="0" step="1000" placeholder="未設定（0円）">
+        </label>
+        <div class="budgetbar" id="mgrBudget"></div>
+        <div class="row-actions" style="margin-top:12px;">
+          <button class="btn btn-ghost" id="resetHistBtn">履歴リセット</button>
+          <button class="btn btn-ghost btn-danger" id="resetAllBtn">全データ初期化</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 履歴 ===== -->
+    <section class="view" id="view-history">
+      <div class="sec-head" style="margin-top:14px;"><h2>お財布・収支</h2>
+        <button class="btn btn-mini btn-accent" id="chargeBtn2">＋ チャージ</button>
+      </div>
+      <div class="sum4">
+        <div class="sm"><span>累計課金額</span><b id="sCharged">¥0</b></div>
+        <div class="sm"><span>累計消費pt</span><b id="sSpent">0</b></div>
+        <div class="sm"><span>カード推定合計</span><b id="sValue">0</b></div>
+        <div class="sm"><span>回収率</span><b id="sRate">–</b></div>
+      </div>
+      <div class="budgetbar" id="histBudget"></div>
+
+      <div class="sec-head"><h2>課金履歴</h2>
+        <button class="btn btn-mini btn-ghost" id="clearChargesBtn">クリア</button>
+      </div>
+      <div class="clist" id="chargeList"></div>
+
+      <div class="hstats">
+        <div class="hstat"><span>引いた回数</span><b id="hDraws">0</b></div>
+        <div class="hstat"><span>当たり</span><b id="hHits">0</b></div>
+        <div class="hstat"><span>当たり率</span><b id="hRate">–</b></div>
+      </div>
+      <div class="rarity-chips" id="hRarity"></div>
+      <div class="sec-head">
+        <h2>引いた履歴</h2>
+        <button class="btn btn-mini btn-danger" id="clearHistBtn">履歴クリア</button>
+      </div>
+      <div class="hlist" id="hList"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab on" data-tab="draw"><i>🎁</i>オリパを引く</button>
+    <button class="tab" data-tab="manage"><i>🛠</i>中身・作成</button>
+    <button class="tab" data-tab="history"><i>📜</i>履歴</button>
+  </nav>
+</div>
+
+<!-- ===== 開封ステージ ===== -->
+<div class="stage" id="stage" hidden>
+  <div class="stage-top">
+    <span class="stage-pack-name" id="stagePackName">ピカピカオリパ</span>
+    <span class="stage-hit" id="stageHit" hidden>当たり 0</span>
+    <span class="stage-pt" id="stagePts">0pt</span>
+    <button class="icon-btn" id="stageMuteBtn" aria-label="サウンド切替">🔊</button>
+  </div>
+  <div class="stage-mid">
+    <div class="aura blue" id="aura"></div>
+    <div class="auraSpin" id="auraSpin"></div>
+    <div class="packWrap" id="packWrap">
+      <div class="pack" id="pack">
+        <div class="packBody">
+          <div class="pk-logo">ORIPA</div>
+          <div class="pk-emoji" id="pkEmoji">⚡</div>
+          <div class="pk-name" id="pkName">ピカピカオリパ</div>
+          <div class="pk-price" id="pkPrice">1口 ¥500</div>
+          <div class="pk-serial">No.0001</div>
+        </div>
+        <div class="packTop" id="packTop"><span>TEAR HERE</span></div>
+        <div class="packFlash" id="packFlash"></div>
+      </div>
+      <div class="hint" id="packHint"><b>タップ</b> か <b>上にスワイプ</b> で開封</div>
+    </div>
+    <div class="hand" id="hand" hidden></div>
+  </div>
+  <div class="result" id="result" hidden>
+    <div class="res-head">
+      <span>獲得カード</span>
+      <b id="resTotal">還元 0pt</b>
+    </div>
+    <div class="res-list" id="resList"></div>
+  </div>
+  <div class="stage-actions" id="stageActions" hidden>
+    <button class="btn btn-ghost" id="flipAllBtn">まとめてめくる</button>
+    <button class="btn btn-accent" id="closeBtn">閉じる</button>
+  </div>
+</div>
+
+<!-- ===== チャージ ===== -->
+<div class="modal" id="chargeModal" hidden>
+  <div class="modal-card charge-card">
+    <div class="cm-head">
+      <div>
+        <b>＋ ポイントチャージ</b>
+        <span>1円 = 1pt。アプリ内の仮想ポイントで、実際の決済・請求は発生しません。</span>
+      </div>
+      <button class="icon-x" id="cmClose" aria-label="閉じる">✕</button>
+    </div>
+
+    <div class="cm-balance">
+      <div><span>所持pt</span><b id="cmPts">0</b></div>
+      <div><span>累計課金額</span><b id="cmTotal">¥0</b></div>
+    </div>
+
+    <p class="cm-need" id="cmNeed" hidden></p>
+
+    <div class="cm-amounts" id="cmAmounts"></div>
+    <div class="cm-custom">
+      <input id="cmInput" type="number" inputmode="numeric" min="0" step="100" placeholder="任意の金額（円）">
+      <button class="btn btn-ghost" id="cmInputGo">この金額</button>
+    </div>
+
+    <div class="cm-preview" id="cmPreview"></div>
+    <button class="btn btn-accent cm-go" id="cmGo">チャージする</button>
+    <p class="cm-foot">※シミュレーションです。クレジットカード等の登録は不要で、実際のお金は動きません。</p>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <p id="modalText"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="modalCancel">キャンセル</button>
+      <button class="btn btn-accent" id="modalOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+"use strict";
+/* =========================================================================
+   オリパ シミュレーター  —  単一ファイル / 外部依存なし
+   ========================================================================= */
+
+var KEY = 'oripa-state-v1';
+var RARITIES = ['PSA10', 'SAR', 'UR', 'SR', 'AR', 'RR', 'R', '保証'];
+var RANKS = ['虹', '金', '紫', '青', '白'];
+var RANK_CLASS = { '虹': 'rainbow', '金': 'gold', '紫': 'purple', '青': 'blue', '白': 'white' };
+var RANK_ORDER = { '虹': 5, '金': 4, '紫': 3, '青': 2, '白': 1 };
+var RANK_DEFAULT = { PSA10: '虹', SAR: '虹', UR: '金', SR: '紫', AR: '青', RR: '白', R: '白', '保証': '青' };
+var RARITY_ART = { PSA10: '🏆', SAR: '🌟', UR: '💎', SR: '🔮', AR: '✨', RR: '🎴', R: '🎴', '保証': '🛡️' };
+var RARITY_ORDER = ['PSA10', 'SAR', 'UR', 'SR', 'AR', 'RR', 'R', '保証'];
+
+/* ---------------- state ---------------- */
+var state = null;
+var memOnly = false;
+
+function uid() {
+  return 'i' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+}
+function num(v, d) {
+  var n = parseInt(v, 10);
+  return isFinite(n) ? n : d;
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function yen(n) {
+  return '¥' + num(n, 0).toLocaleString('ja-JP');
+}
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function mkItem(name, rarity, count, rank, value) {
+  var c = Math.max(0, num(count, 1));
+  return {
+    id: uid(),
+    name: name,
+    rarity: rarity,
+    rank: rank || RANK_DEFAULT[rarity] || '白',
+    count: c,
+    left: c,
+    value: Math.max(0, num(value, 0))
+  };
+}
+
+function presetSets() {
+  return [
+    {
+      id: 'pk-pika',
+      name: 'ピカピカオリパ',
+      emoji: '⚡',
+      price: 500,
+      items: [
+        mkItem('ピカチュウex SAR', 'PSA10', 1, '虹', 3000),
+        mkItem('リザードンex SAR', 'SAR', 1, '虹', 2000),
+        mkItem('ミュウツーVSTAR', 'UR', 2, '金', 700),
+        mkItem('カメックスex', 'SR', 3, '紫', 300),
+        mkItem('イーブイ', 'AR', 8, '青', 150),
+        mkItem('ゲッコウガex', 'RR', 7, '白', 50),
+        mkItem('オリパ限定プロモ', '保証', 8, '白', 30)
+      ]
+    },
+    {
+      id: 'pk-gekiatsu',
+      name: '激アツハイリスクオリパ',
+      emoji: '🔥',
+      price: 3000,
+      items: [
+        mkItem('リザードンex (151) PSA10', 'PSA10', 1, '虹', 18000),
+        mkItem('ブラッキーVMAX', 'UR', 1, '金', 9000),
+        mkItem('レックウザex', 'SR', 2, '紫', 2500),
+        mkItem('ミュウex', 'AR', 3, '青', 800),
+        mkItem('ニンフィアex', 'RR', 6, '白', 300),
+        mkItem('マリィのプライド', 'RR', 7, '白', 250)
+      ]
+    },
+    {
+      id: 'pk-otegaru',
+      name: '毎日お手軽オリパ',
+      emoji: '✨',
+      price: 100,
+      items: [
+        mkItem('ミュウex SAR', 'PSA10', 1, '虹', 900),
+        mkItem('ピカチュウex', 'SR', 3, '紫', 150),
+        mkItem('イーブイex', 'AR', 20, '青', 60),
+        mkItem('ナンジャモ', 'RR', 26, '白', 25)
+      ]
+    }
+  ];
+}
+
+function defaultState() {
+  var sets = presetSets();
+  return {
+    v: 2,
+    current: sets[0].id,
+    sets: sets,
+    history: [],
+    charges: [],
+    wallet: { points: 0, charged: 0, spent: 0, monthKey: '', monthCharged: 0, budget: 10000 },
+    mute: false
+  };
+}
+
+function normalizeItem(it) {
+  var o = {
+    id: it.id || uid(),
+    name: String(it.name == null ? 'カード' : it.name),
+    rarity: RARITIES.indexOf(it.rarity) >= 0 ? it.rarity : 'RR',
+    rank: RANKS.indexOf(it.rank) >= 0 ? it.rank : '白',
+    count: Math.max(0, num(it.count, 0)),
+    left: Math.max(0, num(it.left, 0)),
+    value: Math.max(0, num(it.value, 0))
+  };
+  if (o.left > o.count) o.left = o.count;
+  return o;
+}
+
+function normalize(st) {
+  var base = defaultState();
+  var s = st && typeof st === 'object' ? st : {};
+  var out = {
+    v: 2,
+    current: s.current || '',
+    sets: [],
+    history: Array.isArray(s.history) ? s.history.slice(0, 500) : [],
+    charges: [],
+    wallet: { points: 0, charged: 0, spent: 0, monthKey: '', monthCharged: 0, budget: 10000 },
+    mute: !!s.mute
+  };
+  (function () {
+    var w = s.wallet && typeof s.wallet === 'object' ? s.wallet : {};
+    out.wallet = {
+      points: Math.max(0, num(w.points, 0)),
+      charged: Math.max(0, num(w.charged, 0)),
+      spent: Math.max(0, num(w.spent, 0)),
+      monthKey: String(w.monthKey || ''),
+      monthCharged: Math.max(0, num(w.monthCharged, 0)),
+      budget: Math.max(0, num(w.budget, 10000))
+    };
+    if (Array.isArray(s.charges)) {
+      out.charges = s.charges.slice(-500).map(function (c) {
+        return {
+          t: num(c && c.t, Date.now()),
+          amount: Math.max(0, num(c && c.amount, 0)),
+          month: String((c && c.month) || '')
+        };
+      });
+    }
+  })();
+  if (Array.isArray(s.sets)) {
+    s.sets.forEach(function (set) {
+      if (!set || !Array.isArray(set.items)) return;
+      out.sets.push({
+        id: set.id || uid(),
+        name: String(set.name == null ? 'オリパ' : set.name),
+        emoji: String(set.emoji == null ? '🎴' : set.emoji).slice(0, 4),
+        price: Math.max(0, num(set.price, 0)),
+        items: set.items.map(normalizeItem)
+      });
+    });
+  }
+  if (!out.sets.length) out.sets = base.sets;
+  var found = false;
+  for (var i = 0; i < out.sets.length; i++) if (out.sets[i].id === out.current) found = true;
+  if (!found) out.current = out.sets[0].id;
+  out.history = out.history.filter(function (h) {
+    return h && Array.isArray(h.cards) && h.cards.length;
+  }).map(function (h) {
+    return {
+      t: num(h.t, Date.now()),
+      setId: h.setId || '',
+      setName: String(h.setName || ''),
+      price: Math.max(0, num(h.price, 0)),
+      cost: Math.max(0, num(h.cost, 0)),
+      cards: h.cards.map(function (c) {
+        var st = c && (c.state === 'redeem' || c.state === 'keep') ? c.state : 'none';
+        return {
+          name: String(c && c.name != null ? c.name : ''),
+          rarity: c && RARITIES.indexOf(c.rarity) >= 0 ? c.rarity : 'RR',
+          rank: c && RANKS.indexOf(c.rank) >= 0 ? c.rank : '白',
+          value: Math.max(0, num(c && c.value, 0)),
+          state: st
+        };
+      })
+    };
+  });
+  return out;
+}
+
+function load() {
+  try {
+    var raw = window.localStorage.getItem(KEY);
+    if (!raw) return defaultState();
+    return normalize(JSON.parse(raw));
+  } catch (e) {
+    try { memOnly = true; } catch (e2) { }
+    return defaultState();
+  }
+}
+
+function save() {
+  if (memOnly) return;
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(state));
+  } catch (e) {
+    memOnly = true;
+  }
+}
+
+/* ---------------- domain helpers ---------------- */
+function curSet() {
+  if (!state) return null;
+  for (var i = 0; i < state.sets.length; i++) if (state.sets[i].id === state.current) return state.sets[i];
+  return state.sets[0] || null;
+}
+function totalOf(set) {
+  var t = 0;
+  for (var i = 0; i < set.items.length; i++) t += set.items[i].count;
+  return t;
+}
+function leftOf(set) {
+  var t = 0;
+  for (var i = 0; i < set.items.length; i++) t += set.items[i].left;
+  return t;
+}
+function hitLeftOf(set) {
+  var t = 0;
+  for (var i = 0; i < set.items.length; i++) if (isHitRank(set.items[i].rank)) t += set.items[i].left;
+  return t;
+}
+function isHitRank(rank) {
+  return rank === '虹' || rank === '金';
+}
+function findItem(set, id) {
+  if (!set) return null;
+  for (var i = 0; i < set.items.length; i++) if (set.items[i].id === id) return set.items[i];
+  return null;
+}
+
+/** 残数による重み付き抽選。引いたら残数を1つ減らす。 */
+function drawOne(set) {
+  var pool = [];
+  for (var i = 0; i < set.items.length; i++) {
+    var it = set.items[i];
+    for (var k = 0; k < it.left; k++) pool.push(it);
+  }
+  if (!pool.length) return null;
+  var pick = pool[Math.floor(Math.random() * pool.length)];
+  pick.left = Math.max(0, pick.left - 1);
+  return pick;
+}
+
+/** n連ガチャ。残数不足なら null。 */
+function rollDraw(set, n) {
+  if (leftOf(set) < n) return null;
+  var got = [];
+  for (var i = 0; i < n; i++) {
+    var it = drawOne(set);
+    if (!it) break;
+    got.push({ name: it.name, rarity: it.rarity, rank: it.rank, value: num(it.value, 0), state: 'none' });
+  }
+  return got.length ? got : null;
+}
+
+function auraOf(cards) {
+  var best = 0;
+  for (var i = 0; i < cards.length; i++) {
+    var o = RANK_ORDER[cards[i].rank] || 0;
+    if (o > best) best = o;
+  }
+  if (best >= 5) return 'rainbow';
+  if (best >= 4) return 'gold';
+  return 'blue';
+}
+
+function rankClass(rank) { return 'rk-' + (RANK_CLASS[rank] || 'white'); }
+
+/* ---------------- wallet / points ---------------- */
+function fmt(n) { return num(n, 0).toLocaleString('ja-JP'); }
+
+function monthKeyNow() {
+  var d = new Date();
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+}
+
+/** 月が変わったら今月の課金額をリセット */
+function rollMonth() {
+  if (!state || !state.wallet) return;
+  var k = monthKeyNow();
+  if (!state.wallet.monthKey) { state.wallet.monthKey = k; return; }
+  if (state.wallet.monthKey !== k) {
+    state.wallet.monthKey = k;
+    state.wallet.monthCharged = 0;
+    save();
+  }
+}
+
+function cardsValue(cards) {
+  var t = 0;
+  if (!cards) return 0;
+  for (var i = 0; i < cards.length; i++) t += num(cards[i].value, 0);
+  return t;
+}
+function allValue() {
+  var t = 0;
+  for (var i = 0; i < state.history.length; i++) t += cardsValue(state.history[i].cards);
+  return t;
+}
+function recoveryRate() {
+  var spent = num(state.wallet.spent, 0);
+  if (!spent) return null;
+  return (allValue() / spent) * 100;
+}
+
+/** 予算の状態。extra は「これからチャージする額（円）」 */
+function budgetInfo(extra) {
+  var w = state.wallet;
+  var b = num(w.budget, 0);
+  var add = Math.max(0, num(extra, 0));
+  var used = num(w.monthCharged, 0);
+  var after = used + add;
+  var pct = b > 0 ? Math.min(100, (after / b) * 100) : 0;
+  var level = 'none';
+  if (b > 0) {
+    if (after > b) level = 'over';
+    else if (after >= b * 0.8) level = 'warn';
+    else level = 'ok';
+  }
+  return {
+    has: b > 0, budget: b, used: used, after: after, pct: pct, level: level,
+    left: Math.max(0, b - after), over: Math.max(0, after - b)
+  };
+}
+
+function budgetBarHTML(bi) {
+  if (!bi.has) {
+    return '<div class="bb-note">月の課金上限は未設定です（「中身・作成」タブで設定できます）</div>';
+  }
+  var cls = bi.level === 'over' ? 'over' : (bi.level === 'warn' ? 'warn' : '');
+  var msg = '';
+  if (bi.level === 'over') msg = '<div class="bb-note alert">上限を ' + yen(bi.over) + ' 超えています</div>';
+  else if (bi.level === 'warn') msg = '<div class="bb-note alert">上限まで残り ' + yen(bi.left) + '（80%超）</div>';
+  else msg = '<div class="bb-note">上限まで残り ' + yen(bi.left) + '</div>';
+  return '<div class="bb-top"><span>今月の課金 <b>' + yen(bi.used) + '</b> / 上限 ' + yen(bi.budget) + '</span><span>' + Math.round(bi.pct) + '%</span></div>' +
+    '<div class="bar sm"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>' + msg;
+}
+
+/** 仮想チャージ（1円=1pt）。実際の決済はない。 */
+function addCharge(amount, silent) {
+  amount = Math.floor(num(amount, 0));
+  if (amount <= 0) { toast('チャージ金額を入力してください'); return false; }
+  if (amount > 1000000) { toast('一度のチャージは100万円までです'); return false; }
+  rollMonth();
+  var w = state.wallet;
+  w.points += amount;
+  w.charged += amount;
+  w.monthCharged += amount;
+  state.charges.push({ t: Date.now(), amount: amount, month: w.monthKey });
+  if (state.charges.length > 500) state.charges = state.charges.slice(-500);
+  save();
+  renderAll();
+  if (!silent) { sfxCharge(); toast(fmt(amount) + '円 チャージしました（+' + fmt(amount) + 'pt）'); }
+  return true;
+}
+
+/** カードの還元/キープを切り替える */
+function setCardState(card, st) {
+  if (!card) return;
+  if (card.state === st) return;
+  var v = num(card.value, 0);
+  if (card.state === 'redeem') state.wallet.points = Math.max(0, state.wallet.points - v);
+  card.state = st;
+  if (st === 'redeem') state.wallet.points += v;
+  save();
+}
+
+function applyAll(entry, st) {
+  if (!entry) return;
+  var n = 0;
+  for (var i = 0; i < entry.cards.length; i++) {
+    if (entry.cards[i].state !== st) { setCardState(entry.cards[i], st); n++; }
+  }
+  if (!n) { toast(st === 'redeem' ? 'すでにすべて還元済みです' : 'すでにすべてキープ済みです'); return; }
+  renderAll();
+  toast(st === 'redeem' ? n + '枚をポイントに還元しました' : n + '枚をキープしました');
+}
+
+/* ---------------- DOM refs ---------------- */
+var $ = function (id) { return document.getElementById(id); };
+var elMute, elHeroEmoji, elHeroName, elHeroPrice, elStatLeft, elStatTotal, elStatBar,
+  elStatHit, elHitLine, elDrawBtns, elSoldOut, elRefill,
+  elSetChips, elNewSet, elResetSet, elDelSet, elEdEmoji, elEdName, elEdPrice,
+  elItemList, elItemsFoot, elAddItem,
+  elHDraws, elHHits, elHRate, elHRarity, elHList, elClearHist,
+  elSCharged, elSSpent, elSValue, elSRate, elChargeList, elClearCharges,
+  elHistBudget, elMgrBudget, elEdBudget, elResetHist, elResetAll,
+  elHdPts, elHdCharged, elWalletChip, elWalletLine,
+  elChargeModal, elCmClose, elCmPts, elCmTotal, elCmNeed, elCmAmounts,
+  elCmInput, elCmInputGo, elCmPreview, elCmGo, elChargeBtn2,
+  elStage, elStagePackName, elStageHit, elStagePts, elStageMute, elAura, elAuraSpin,
+  elPackWrap, elPack, elPackTop, elPackFlash, elPkEmoji, elPkName, elPkPrice, elPackHint,
+  elHand, elStageActions, elFlipAll, elClose, elResult, elResList, elResTotal,
+  elModal, elModalText, elModalOk, elModalCancel, elToast, elConfetti;
+
+/* ---------------- render : wallet ---------------- */
+function renderWallet() {
+  rollMonth();
+  var w = state.wallet;
+  var set = curSet();
+  var price = set ? num(set.price, 0) : 0;
+
+  if (elHdPts) elHdPts.textContent = fmt(w.points);
+  if (elWalletChip) elWalletChip.className = 'wchip' + (w.points <= 0 ? ' zero' : '');
+  if (elHdCharged) elHdCharged.textContent = '累計 ' + yen(w.charged);
+  if (elStagePts) elStagePts.textContent = fmt(w.points) + 'pt';
+
+  if (elEdBudget && document.activeElement !== elEdBudget) {
+    elEdBudget.value = w.budget ? String(w.budget) : '';
+  }
+  var bi = budgetInfo(0);
+  if (elMgrBudget) elMgrBudget.innerHTML = budgetBarHTML(bi);
+  if (elHistBudget) elHistBudget.innerHTML = budgetBarHTML(bi);
+
+  if (elWalletLine) {
+    var need = Math.max(0, price - w.points);
+    var cls = bi.level === 'over' ? 'over' : (bi.level === 'warn' ? 'warn' : '');
+    var html = '<div class="wl-top"><span>所持ポイント</span><span class="b"><b>' + fmt(w.points) + '</b><i>pt</i></span></div>';
+    html += '<div class="bar sm"><i class="' + cls + '" style="width:' + bi.pct + '%"></i></div>';
+    html += '<div class="wl-note">1口 ' + yen(price) + ' ・ 今月の課金 ' + yen(bi.used) +
+      (bi.has ? ' / 上限 ' + yen(bi.budget) : '（予算未設定）') + '</div>';
+    if (need > 0) {
+      html += '<div class="wl-note alert">ポイント不足：あと ' + fmt(need) + 'pt。右上の「＋」からチャージできます</div>';
+    }
+    elWalletLine.innerHTML = html;
+  }
+}
+
+/* ---------------- render : draw ---------------- */
+function renderDraw() {
+  var set = curSet();
+  if (!set) return;
+  var left = leftOf(set), total = totalOf(set), hits = hitLeftOf(set);
+
+  elHeroEmoji.textContent = set.emoji;
+  elHeroName.textContent = set.name;
+  elHeroPrice.textContent = '1口 ' + yen(set.price);
+  elStatLeft.textContent = String(left);
+  elStatTotal.textContent = '/ ' + total + '口';
+  elStatHit.textContent = String(hits);
+  elStatBar.style.width = (total > 0 ? Math.max(0, Math.min(100, (left / total) * 100)) : 0) + '%';
+
+  // 当たり一覧
+  var chips = [];
+  for (var i = 0; i < set.items.length; i++) {
+    var it = set.items[i];
+    if (isHitRank(it.rank) && it.left > 0) {
+      chips.push('<span class="hl-chip ' + rankClass(it.rank) + '"><em>' + esc(it.rarity) + '</em>' +
+        esc(it.name) + ' <span class="n">×' + it.left + '</span></span>');
+    }
+  }
+  if (chips.length) {
+    elHitLine.innerHTML = '<span class="hl-label">当たり</span>' + chips.join('');
+  } else {
+    elHitLine.innerHTML = '<span class="hl-label">当たり</span><span class="hl-chip">出尽くし（残りは通常カードのみ）</span>';
+  }
+
+  // ボタン
+  var combos = [1, 3, 5];
+  var html = '';
+  for (var j = 0; j < combos.length; j++) {
+    var n = combos[j];
+    var ok = left >= n && n > 0;
+    html += '<button class="dbtn' + (n === 1 ? ' primary' : '') + '" data-n="' + n + '"' + (ok ? '' : ' disabled') + '>' +
+      '<span class="n">' + n + '口</span>' +
+      '<span class="p">' + yen(set.price * n) + '</span></button>';
+  }
+  elDrawBtns.innerHTML = html;
+
+  elSoldOut.hidden = left > 0;
+  elDrawBtns.style.display = left > 0 ? '' : 'none';
+
+  renderWallet();
+}
+
+/* ---------------- render : manage ---------------- */
+function renderChips() {
+  var html = '';
+  for (var i = 0; i < state.sets.length; i++) {
+    var s = state.sets[i];
+    html += '<button class="chip' + (s.id === state.current ? ' on' : '') + '" data-set="' + esc(s.id) + '">' +
+      '<span>' + esc(s.emoji) + '</span>' + esc(s.name) +
+      '<small>' + leftOf(s) + '/' + totalOf(s) + '</small></button>';
+  }
+  elSetChips.innerHTML = html;
+}
+
+function rarityOptions(sel) {
+  return RARITIES.map(function (r) {
+    return '<option value="' + r + '"' + (r === sel ? ' selected' : '') + '>' + r + '</option>';
+  }).join('');
+}
+function rankOptions(sel) {
+  return RANKS.map(function (r) {
+    return '<option value="' + r + '"' + (r === sel ? ' selected' : '') + '>' + r + '</option>';
+  }).join('');
+}
+
+function renderItems() {
+  var set = curSet();
+  if (!set) { elItemList.innerHTML = ''; return; }
+  if (!set.items.length) {
+    elItemList.innerHTML = '<p class="empty">中身が空です。「＋ 追加」でカードを登録してください。</p>';
+    renderItemsFoot();
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < set.items.length; i++) {
+    var it = set.items[i];
+    html += '<div class="item" data-id="' + esc(it.id) + '">' +
+      '<div class="item-top">' +
+      '<input class="i-name" data-f="name" type="text" value="' + esc(it.name) + '" placeholder="カード名">' +
+      '<span class="left-badge">残 <b>' + it.left + '</b></span>' +
+      '<button class="icon-x" data-del="1" aria-label="削除">✕</button>' +
+      '</div>' +
+      '<div class="item-grid">' +
+      '<label><span>レア度</span><select data-f="rarity">' + rarityOptions(it.rarity) + '</select></label>' +
+      '<label><span>ランク</span><select data-f="rank">' + rankOptions(it.rank) + '</select></label>' +
+      '<label><span>封入</span><input type="number" data-f="count" inputmode="numeric" min="0" max="999" value="' + it.count + '"></label>' +
+      '<label><span>価値pt</span><input type="number" data-f="value" inputmode="numeric" min="0" max="999999" value="' + it.value + '"></label>' +
+      '</div></div>';
+  }
+  elItemList.innerHTML = html;
+  renderItemsFoot();
+}
+
+function renderItemsFoot() {
+  var set = curSet();
+  if (!set) { elItemsFoot.innerHTML = ''; return; }
+  elItemsFoot.innerHTML =
+    '<span>合計 <b>' + totalOf(set) + '</b> 口 / 残り <b>' + leftOf(set) + '</b> 口</span>' +
+    '<span>当たり <b class="fhit">' + hitLeftOf(set) + '</b> 口</span>';
+}
+
+function renderManage() {
+  renderChips();
+  var set = curSet();
+  if (!set) return;
+  elEdEmoji.value = set.emoji;
+  elEdName.value = set.name;
+  elEdPrice.value = String(set.price);
+  renderItems();
+}
+
+/* ---------------- render : history ---------------- */
+function renderCharges() {
+  if (!elChargeList) return;
+  var list = state.charges || [];
+  if (!list.length) {
+    elChargeList.innerHTML = '<p class="empty">まだチャージしていません。</p>';
+    if (elClearCharges) elClearCharges.disabled = true;
+    return;
+  }
+  if (elClearCharges) elClearCharges.disabled = false;
+  var html = '';
+  var lim = Math.min(list.length, 40);
+  for (var i = list.length - 1; i >= list.length - lim; i--) {
+    var c = list[i];
+    html += '<div class="citem"><span class="amt2">＋' + yen(c.amount) + '</span><span class="tm">' + fmtTime(c.t) + '</span></div>';
+  }
+  elChargeList.innerHTML = html;
+}
+
+function renderHistory() {
+  rollMonth();
+  renderWallet();
+  renderCharges();
+
+  var h = state.history || [];
+  var draws = 0, hits = 0, counts = {};
+  for (var i = 0; i < h.length; i++) {
+    var e = h[i];
+    draws += e.cards.length;
+    for (var j = 0; j < e.cards.length; j++) {
+      var c = e.cards[j];
+      counts[c.rarity] = (counts[c.rarity] || 0) + 1;
+      if (isHitRank(c.rank)) hits++;
+    }
+  }
+  elHDraws.textContent = String(draws);
+  elHHits.textContent = String(hits);
+  elHRate.textContent = draws ? Math.round((hits / draws) * 100) + '%' : '–';
+
+  // 収支
+  var w = state.wallet;
+  if (elSCharged) elSCharged.textContent = yen(w.charged);
+  if (elSSpent) elSSpent.textContent = fmt(w.spent) + 'pt';
+  var val = allValue();
+  if (elSValue) elSValue.textContent = fmt(val) + 'pt';
+  if (elSRate) {
+    var rate = recoveryRate();
+    if (rate == null) { elSRate.textContent = '–'; elSRate.className = ''; }
+    else {
+      elSRate.textContent = Math.round(rate) + '%';
+      elSRate.className = rate >= 100 ? 'good' : (rate >= 70 ? 'warn' : 'bad');
+    }
+  }
+
+  var chips = '';
+  for (var k = 0; k < RARITY_ORDER.length; k++) {
+    var r = RARITY_ORDER[k];
+    if (!counts[r]) continue;
+    var rk = RANK_DEFAULT[r] || '白';
+    chips += '<span class="rc ' + rankClass(rk) + '">' + r + '<i>×' + counts[r] + '</i></span>';
+  }
+  elHRarity.innerHTML = chips || '<span class="rc">まだ履歴がありません</span>';
+
+  if (!h.length) {
+    elHList.innerHTML = '<p class="empty">まだ引いていません。「オリパを引く」からどうぞ。</p>';
+    elClearHist.disabled = true;
+    return;
+  }
+  elClearHist.disabled = false;
+  var out = '';
+  var lim = Math.min(h.length, 60);
+  for (var m = h.length - 1; m >= h.length - lim; m--) {
+    var ent = h[m];
+    var cards = '';
+    var redVal = 0, keepVal = 0, undecided = 0;
+    for (var n = 0; n < ent.cards.length; n++) {
+      var cc = ent.cards[n];
+      var mk = cc.state === 'redeem' ? '↩' : (cc.state === 'keep' ? '◆' : '');
+      if (cc.state === 'redeem') redVal += num(cc.value, 0);
+      else if (cc.state === 'keep') keepVal += num(cc.value, 0);
+      else undecided++;
+      cards += '<span class="hc ' + rankClass(cc.rank) + '"><em>' + esc(cc.rarity) + '</em>' + esc(cc.name) +
+        ' <i>' + (cc.value ? fmt(cc.value) + 'pt' : '–') + '</i>' + (mk ? ' ' + mk : '') + '</span>';
+    }
+    var badge;
+    if (undecided) {
+      badge = '<span class="hstate">未選択 ' + undecided + '枚</span>';
+    } else if (redVal && !keepVal) {
+      badge = '<span class="hstate redeem">還元済 ' + fmt(redVal) + 'pt</span>';
+    } else if (keepVal && !redVal) {
+      badge = '<span class="hstate keep">キープ ' + fmt(keepVal) + 'pt</span>';
+    } else {
+      badge = '<span class="hstate">還元 ' + fmt(redVal) + ' / キープ ' + fmt(keepVal) + '</span>';
+    }
+    var btns = undecided
+      ? '<button class="btn btn-mini" data-hred="' + m + '">還元</button>' +
+      '<button class="btn btn-mini btn-ghost" data-hkeep="' + m + '">キープ</button>'
+      : '';
+    out += '<div class="hitem"><div class="hitem-top"><b>' + esc(ent.setName) + '</b><span>' + fmtTime(ent.t) + '</span></div>' +
+      '<div class="hcards">' + cards + '</div>' +
+      '<div class="hitem-btns">' + badge + btns + '</div></div>';
+  }
+  elHList.innerHTML = out;
+}
+
+function fmtTime(t) {
+  var d = new Date(t);
+  if (isNaN(d.getTime())) return '';
+  var p = function (x) { return (x < 10 ? '0' : '') + x; };
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function renderAll() {
+  rollMonth();
+  renderWallet();
+  renderDraw();
+  renderManage();
+  renderHistory();
+  syncMuteButtons();
+}
+
+/* ---------------- tabs ---------------- */
+var TAB_VIEW = { draw: 'view-draw', manage: 'view-manage', history: 'view-history' };
+function switchTab(name) {
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var on = tabs[i].getAttribute('data-tab') === name;
+    tabs[i].className = 'tab' + (on ? ' on' : '');
+  }
+  for (var k in TAB_VIEW) {
+    if (!Object.prototype.hasOwnProperty.call(TAB_VIEW, k)) continue;
+    var v = $(TAB_VIEW[k]);
+    if (v) v.className = 'view' + (k === name ? ' on' : '');
+  }
+  if (name === 'draw') renderDraw();
+  if (name === 'manage') renderManage();
+  if (name === 'history') renderHistory();
+}
+
+/* ---------------- toast / modal ---------------- */
+var toastTimer = null;
+function toast(msg) {
+  if (!elToast) return;
+  elToast.textContent = msg;
+  elToast.className = 'toast on';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { elToast.className = 'toast'; }, 1700);
+}
+
+var modalCb = null;
+function askConfirm(text, cb) {
+  elModalText.textContent = text;
+  modalCb = cb;
+  elModal.hidden = false;
+}
+function closeModal() {
+  elModal.hidden = true;
+  modalCb = null;
+}
+
+/* ---------------- audio ---------------- */
+var AC = null, noiseBuf = null;
+
+function audioCtx() {
+  if (state && state.mute) return null;
+  if (!AC) {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    try { AC = new C(); } catch (e) { return null; }
+  }
+  if (AC.state === 'suspended') { try { AC.resume(); } catch (e) { } }
+  return AC;
+}
+function makeNoise(ctx) {
+  if (noiseBuf && noiseBuf.sampleRate === ctx.sampleRate) return noiseBuf;
+  var len = Math.floor(ctx.sampleRate * 0.6);
+  var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  var d = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  noiseBuf = buf;
+  return buf;
+}
+function tone(ctx, freq, start, dur, type, gain, freq2) {
+  var o = ctx.createOscillator();
+  var g = ctx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, start);
+  if (freq2) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq2), start + dur);
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain || 0.18), start + Math.min(0.02, dur * 0.3));
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(start); o.stop(start + dur + 0.02);
+}
+
+function sfxTear() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  var src = ctx.createBufferSource();
+  src.buffer = makeNoise(ctx);
+  var bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.Q.value = 1.1;
+  bp.frequency.setValueAtTime(700, t);
+  bp.frequency.exponentialRampToValueAtTime(3400, t + 0.28);
+  var g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.42, t + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+  src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+  src.start(t); src.stop(t + 0.4);
+  tone(ctx, 520, t, 0.12, 'triangle', 0.10, 260);
+}
+function sfxFlip() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  tone(ctx, 880, t, 0.07, 'triangle', 0.10, 1320);
+  var src = ctx.createBufferSource();
+  src.buffer = makeNoise(ctx);
+  var hp = ctx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 2200;
+  var g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  src.connect(hp); hp.connect(g); g.connect(ctx.destination);
+  src.start(t); src.stop(t + 0.12);
+}
+function sfxAppear() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  tone(ctx, 190, t, 0.16, 'sine', 0.16, 120);
+  tone(ctx, 380, t + 0.03, 0.12, 'triangle', 0.07);
+}
+function sfxAura() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  var o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(110, t);
+  o.frequency.exponentialRampToValueAtTime(760, t + 0.6);
+  f.type = 'lowpass'; f.frequency.value = 1800;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.09, t + 0.18);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.66);
+  o.connect(f); f.connect(g); g.connect(ctx.destination);
+  o.start(t); o.stop(t + 0.7);
+}
+function sfxPromote() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  tone(ctx, 1046, t, 0.20, 'triangle', 0.16);
+  tone(ctx, 1318, t + 0.06, 0.22, 'triangle', 0.14);
+  tone(ctx, 1568, t + 0.13, 0.34, 'sine', 0.13);
+}
+function sfxCharge() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  tone(ctx, 880, t, 0.10, 'triangle', 0.13);
+  tone(ctx, 1174.7, t + 0.09, 0.14, 'triangle', 0.12);
+  tone(ctx, 1568.0, t + 0.18, 0.30, 'sine', 0.10);
+}
+function sfxDeny() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  tone(ctx, 160, t, 0.14, 'square', 0.08, 110);
+}
+function sfxFanfare() {
+  var ctx = audioCtx(); if (!ctx) return;
+  var t = ctx.currentTime;
+  var notes = [523.25, 659.25, 783.99, 1046.5];
+  for (var i = 0; i < notes.length; i++) {
+    tone(ctx, notes[i], t + i * 0.10, 0.20, 'triangle', 0.16);
+    tone(ctx, notes[i] * 2, t + i * 0.10, 0.14, 'sine', 0.06);
+  }
+  var s = t + 0.40;
+  tone(ctx, 1046.5, s, 0.55, 'triangle', 0.16);
+  tone(ctx, 1318.5, s, 0.55, 'triangle', 0.12);
+  tone(ctx, 1568.0, s, 0.60, 'sine', 0.12);
+  tone(ctx, 523.25, s, 0.50, 'square', 0.05);
+}
+
+function syncMuteButtons() {
+  var icon = (state && state.mute) ? '🔇' : '🔊';
+  if (elMute) { elMute.textContent = icon; elMute.className = 'icon-btn' + (state.mute ? ' off' : ''); }
+  if (elStageMute) { elStageMute.textContent = icon; elStageMute.className = 'icon-btn' + (state.mute ? ' off' : ''); }
+}
+function toggleMute() {
+  state.mute = !state.mute;
+  save();
+  syncMuteButtons();
+  if (!state.mute) { sfxFlip(); toast('サウンド ON'); } else { toast('サウンド OFF'); }
+}
+
+/* ---------------- confetti ---------------- */
+var confetti = {
+  ctx: null, w: 0, h: 0, parts: [], raf: 0, dpr: 1
+};
+var CONF_COLORS = ['#ffd166', '#ff5f9e', '#5ee7ff', '#a78bfa', '#4ade80', '#ffffff', '#ff9f43'];
+
+function confettiInit() {
+  if (!elConfetti) return;
+  confetti.ctx = elConfetti.getContext ? elConfetti.getContext('2d') : null;
+  confettiResize();
+}
+function confettiResize() {
+  if (!elConfetti) return;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  confetti.dpr = dpr;
+  confetti.w = window.innerWidth || 390;
+  confetti.h = window.innerHeight || 800;
+  elConfetti.width = Math.floor(confetti.w * dpr);
+  elConfetti.height = Math.floor(confetti.h * dpr);
+  elConfetti.style.width = confetti.w + 'px';
+  elConfetti.style.height = confetti.h + 'px';
+  if (confetti.ctx && confetti.ctx.setTransform) confetti.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function confettiBurst(n) {
+  if (!confetti.ctx) return;
+  var cx = confetti.w / 2, cy = confetti.h * 0.42;
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2;
+    var sp = 2.4 + Math.random() * 7.6;
+    confetti.parts.push({
+      x: cx + (Math.random() - 0.5) * 80,
+      y: cy + (Math.random() - 0.5) * 60,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp - 3.2,
+      w: 5 + Math.random() * 6,
+      h: 7 + Math.random() * 8,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.34,
+      color: CONF_COLORS[Math.floor(Math.random() * CONF_COLORS.length)],
+      life: 1
+    });
+  }
+  if (!confetti.raf) confettiLoop();
+}
+function confettiLoop() {
+  var c = confetti.ctx;
+  if (!c) return;
+  c.clearRect(0, 0, confetti.w, confetti.h);
+  var alive = [];
+  for (var i = 0; i < confetti.parts.length; i++) {
+    var p = confetti.parts[i];
+    p.vy += 0.20;
+    p.vx *= 0.992;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    p.life -= 0.0085;
+    if (p.life > 0 && p.y < confetti.h + 40) {
+      alive.push(p);
+      c.save();
+      c.globalAlpha = Math.max(0, Math.min(1, p.life));
+      c.translate(p.x, p.y);
+      c.rotate(p.rot);
+      c.fillStyle = p.color;
+      c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      c.restore();
+    }
+  }
+  confetti.parts = alive;
+  if (alive.length) {
+    confetti.raf = requestAnimationFrame(confettiLoop);
+  } else {
+    confetti.raf = 0;
+    c.clearRect(0, 0, confetti.w, confetti.h);
+  }
+}
+
+/* ---------------- stage ---------------- */
+var stageState = { phase: 'idle', cards: [], set: null, entry: null, flipFlags: [], flipped: 0, hits: 0, promoted: false };
+
+function setAura(kind) {
+  elAura.className = 'aura ' + kind;
+  elAuraSpin.className = 'auraSpin' + (kind === 'rainbow' ? ' on' : '');
+}
+
+function showStage(cards, set, entry) {
+  stageState.phase = 'idle';
+  stageState.cards = cards;
+  stageState.set = set;
+  stageState.entry = entry || null;
+  stageState.flipFlags = [];
+  stageState.flipped = 0;
+  stageState.hits = 0;
+  stageState.promoted = false;
+
+  elStagePackName.textContent = set.name;
+  elPkEmoji.textContent = set.emoji;
+  elPkName.textContent = set.name;
+  elPkPrice.textContent = '1口 ' + yen(set.price);
+  (function () {
+    var sn = document.getElementById('pkSerial') || null;
+    if (sn) sn.textContent = 'No.' + String(Math.floor(Math.random() * 9000 + 1000));
+  })();
+
+  elPack.className = 'pack';
+  elPack.style.transform = '';
+  elPackFlash.className = 'packFlash';
+  elPackWrap.hidden = false;
+  elPackWrap.style.display = '';
+  elHand.hidden = true;
+  elHand.innerHTML = '';
+  elStageActions.hidden = true;
+  if (elResult) { elResult.hidden = true; elResList.innerHTML = ''; }
+  elStageHit.hidden = true;
+  elStageHit.textContent = '当たり 0';
+  elPackHint.hidden = false;
+
+  var kind = auraOf(cards);
+  setAura(kind);
+
+  elStage.hidden = false;
+  document.body.classList.add('lock');
+  requestAnimationFrame(function () {
+    elStage.className = 'stage in';
+  });
+  sfxAura();
+
+  // 逆転昇格演出（低確率・通常オーラから虹へ）
+  if (kind === 'blue' && Math.random() < 0.16) {
+    stageState.promoted = true;
+    setTimeout(function () {
+      if (stageState.phase === 'gone') return;
+      setAura('rainbow');
+      elPackFlash.className = 'packFlash';
+      void elPackFlash.offsetWidth;
+      elPackFlash.className = 'packFlash on';
+      sfxPromote();
+    }, 820);
+  }
+}
+
+function openPack() {
+  if (stageState.phase !== 'idle') return;
+  stageState.phase = 'ripping';
+  elPack.className = 'pack shake';
+  elPackHint.hidden = true;
+
+  setTimeout(function () {
+    elPack.className = 'pack ripped';
+    elPackFlash.className = 'packFlash';
+    void elPackFlash.offsetWidth;
+    elPackFlash.className = 'packFlash on';
+    sfxTear();
+  }, 260);
+
+  setTimeout(function () {
+    elPack.className = 'pack ripped gone';
+    buildHand();
+  }, 620);
+
+  setTimeout(function () {
+    elPackWrap.hidden = true;
+    elHand.hidden = false;
+    elStageActions.hidden = false;
+    elStageHit.hidden = false;
+    stageState.phase = 'cards';
+    sfxAppear();
+    if (stageState.cards.length === 1) {
+      // 1枚引きは少し待ってから自動でめくる（タップでも可）
+      setTimeout(function () { }, 0);
+    }
+  }, 900);
+}
+
+function backFace() {
+  return '<div class="face back">' +
+    '<span class="b-top">ORIPA CARD</span>' +
+    '<div class="b-emblem">O</div>' +
+    '<span class="b-txt">ORIGINAL</span>' +
+    '</div>';
+}
+
+function frontFace(c, idx, total) {
+  var rc = rankClass(c.rank);
+  var hit = isHitRank(c.rank);
+  return '<div class="face front ' + rc + '">' +
+    '<div class="f-band"></div>' +
+    '<div class="f-top"><span class="f-rar">' + esc(c.rarity) + '</span>' +
+    '<span class="f-idx">' + (idx + 1) + '/' + total + '</span></div>' +
+    '<div class="f-art"><span>' + (RARITY_ART[c.rarity] || '🎴') + '</span></div>' +
+    '<div class="f-name">' + esc(c.name) + '</div>' +
+    '<div class="f-foot"><span class="rk-chip ' + rc + '">' + esc(c.rank) + 'ランク</span></div>' +
+    (hit ? '<div class="f-holo"></div><div class="f-spark"></div>' : '') +
+    '</div>';
+}
+
+function buildHand() {
+  var cards = stageState.cards;
+  elHand.className = 'hand ' + (cards.length === 1 ? 'one' : 'many');
+  var html = '';
+  for (var i = 0; i < cards.length; i++) {
+    html += '<div class="card enter" data-i="' + i + '" style="animation-delay:' + (i * 80) + 'ms">' +
+      '<div class="card-inner">' + backFace() + frontFace(cards[i], i, cards.length) + '</div></div>';
+  }
+  elHand.innerHTML = html;
+  var els = elHand.querySelectorAll ? elHand.querySelectorAll('.card') : [];
+  for (var k = 0; k < els.length; k++) {
+    (function (el) {
+      el.addEventListener('click', function () { flipCard(el); });
+    })(els[k]);
+  }
+  renderResult();
+  updateStageAction();
+}
+
+/* ---- 結果パネル（還元 / キープ） ---- */
+function renderResult() {
+  if (!elResult) return;
+  var e = stageState.entry;
+  if (!e) { elResult.hidden = true; return; }
+  elResult.hidden = false;
+  var red = 0, keep = 0, html = '';
+  for (var i = 0; i < e.cards.length; i++) {
+    var c = e.cards[i];
+    var flipped = !!stageState.flipFlags[i];
+    var rc = rankClass(c.rank);
+    if (c.state === 'redeem') red += num(c.value, 0);
+    if (c.state === 'keep') keep += num(c.value, 0);
+    html += '<div class="res-row ' + rc + (c.state === 'none' ? ' undecided' : '') + '" data-i="' + i + '">' +
+      '<span class="res-rk"></span>' +
+      '<span class="res-name">' + (flipped ? esc(c.name) : '？？？') + '</span>' +
+      '<span class="res-val' + (flipped ? '' : ' mute') + '">' +
+      (flipped ? (c.value ? '≈' + fmt(c.value) + 'pt' : '–') : '–') + '</span>' +
+      '<span class="seg">' +
+      '<button data-st="redeem"' + (c.state === 'redeem' ? ' class="on"' : '') + (flipped ? '' : ' disabled') + '>還元</button>' +
+      '<button data-st="keep"' + (c.state === 'keep' ? ' class="on"' : '') + (flipped ? '' : ' disabled') + '>キープ</button>' +
+      '</span></div>';
+  }
+  elResList.innerHTML = html;
+  var txt = '還元 ' + fmt(red) + 'pt';
+  if (keep) txt += ' / キープ ' + fmt(keep) + 'pt';
+  elResTotal.textContent = txt;
+}
+
+function updateStageAction() {
+  if (!elFlipAll) return;
+  var all = true;
+  for (var i = 0; i < stageState.cards.length; i++) if (!stageState.flipFlags[i]) all = false;
+  if (all) {
+    elFlipAll.textContent = 'すべて還元';
+    elFlipAll.setAttribute('data-mode', 'redeem');
+  } else {
+    elFlipAll.textContent = 'まとめてめくる';
+    elFlipAll.setAttribute('data-mode', 'flip');
+  }
+}
+
+function flipCard(el) {
+  if (!el || el.classList.contains('flipped')) return;
+  if (stageState.phase !== 'cards') return;
+  el.classList.add('flipped');
+  stageState.flipped++;
+  var idx = parseInt(el.getAttribute('data-i'), 10) || 0;
+  stageState.flipFlags[idx] = true;
+  renderResult();
+  updateStageAction();
+  sfxFlip();
+  var c = stageState.cards[idx];
+  if (c && isHitRank(c.rank)) {
+    stageState.hits++;
+    elStageHit.hidden = false;
+    elStageHit.textContent = '当たり ' + stageState.hits;
+    setTimeout(function () {
+      el.classList.add('holoed');
+      sfxFanfare();
+      confettiBurst(110);
+      elStageHit.style.animation = 'none';
+      void elStageHit.offsetWidth;
+      elStageHit.style.animation = 'pop .4s ease';
+    }, 340);
+  }
+}
+
+function flipAll() {
+  if (stageState.phase !== 'cards') return;
+  var els = elHand.querySelectorAll ? elHand.querySelectorAll('.card') : [];
+  var delay = 0;
+  for (var i = 0; i < els.length; i++) {
+    if (els[i].classList.contains('flipped')) continue;
+    (function (el, d) {
+      setTimeout(function () { flipCard(el); }, d);
+    })(els[i], delay);
+    delay += 260;
+  }
+}
+
+function closeStage() {
+  elStage.className = 'stage';
+  setTimeout(function () {
+    elStage.hidden = true;
+    document.body.classList.remove('lock');
+    elHand.innerHTML = '';
+    elPackWrap.hidden = false;
+    elPack.className = 'pack';
+    stageState.phase = 'idle';
+    stageState.entry = null;
+    stageState.flipFlags = [];
+    if (elResult) elResult.hidden = true;
+    renderAll();
+  }, 220);
+}
+
+/* ---------------- charge modal ---------------- */
+var chargeState = { need: 0, reason: '', sel: 0 };
+
+function openCharge(opts) {
+  chargeState.need = opts && opts.need ? Math.ceil(num(opts.need, 0)) : 0;
+  chargeState.reason = opts && opts.reason ? String(opts.reason) : '';
+  chargeState.sel = chargeState.need > 0 ? chargeState.need : 1000;
+  if (elChargeModal) elChargeModal.hidden = false;
+  renderChargeModal();
+}
+
+function closeCharge() {
+  if (elChargeModal) elChargeModal.hidden = true;
+  chargeState.need = 0;
+  chargeState.reason = '';
+  chargeState.sel = 0;
+}
+
+function renderChargeModal() {
+  if (!elChargeModal || elChargeModal.hidden) return;
+  rollMonth();
+  var w = state.wallet;
+  if (elCmPts) elCmPts.textContent = fmt(w.points) + 'pt';
+  if (elCmTotal) elCmTotal.textContent = yen(w.charged);
+  if (elCmNeed) {
+    if (chargeState.need > 0) {
+      elCmNeed.hidden = false;
+      elCmNeed.textContent = (chargeState.reason || 'ポイントが足りません') +
+        '。あと ' + fmt(chargeState.need) + 'pt チャージすると引けます。';
+    } else {
+      elCmNeed.hidden = true;
+    }
+  }
+
+  var amounts = [1000, 3000, 5000, 10000];
+  var html = '';
+  if (chargeState.need > 0 && amounts.indexOf(chargeState.need) < 0) {
+    html += '<button class="amt' + (chargeState.sel === chargeState.need ? ' on' : '') + '" data-amt="' +
+      chargeState.need + '"><b>' + fmt(chargeState.need) + '</b><span>不足分</span></button>';
+  }
+  for (var i = 0; i < amounts.length; i++) {
+    var a = amounts[i];
+    html += '<button class="amt' + (chargeState.sel === a ? ' on' : '') + '" data-amt="' + a + '">' +
+      '<b>' + fmt(a) + '</b><span>+' + fmt(a) + 'pt</span></button>';
+  }
+  if (elCmAmounts) elCmAmounts.innerHTML = html;
+  renderChargeSel();
+}
+
+function renderChargeSel() {
+  if (!elCmPreview) return;
+  var amt = Math.max(0, Math.floor(num(chargeState.sel, 0)));
+  var bi = budgetInfo(amt);
+  var html = '<div>チャージ後：<b>+' + fmt(amt) + 'pt</b>（所持 ' + fmt(state.wallet.points + amt) + 'pt）</div>';
+  if (bi.has) {
+    html += '<div>今月の課金：<b>' + yen(bi.used) + '</b> → <b>' + yen(bi.after) + '</b> / 上限 ' + yen(bi.budget) + '</div>';
+    if (bi.level === 'over') html += '<div class="over">⚠ 予算上限を ' + yen(bi.over) + ' 超えます</div>';
+    else if (bi.level === 'warn') html += '<div class="alert">⚠ 上限の80%を超えます（残り ' + yen(bi.left) + '）</div>';
+    else html += '<div>上限まで残り ' + yen(bi.left) + '</div>';
+  } else {
+    html += '<div class="alert">月の課金上限が未設定です（「中身・作成」タブで設定できます）</div>';
+  }
+  elCmPreview.innerHTML = html;
+  if (elCmGo) {
+    elCmGo.textContent = amt > 0 ? fmt(amt) + '円 チャージする' : 'チャージする';
+    elCmGo.disabled = amt <= 0;
+  }
+}
+
+function commitCharge() {
+  var amt = Math.floor(num(chargeState.sel, 0));
+  if (amt <= 0) { toast('チャージ金額を選んでください'); return; }
+  var bi = budgetInfo(amt);
+  var go = function () {
+    if (!addCharge(amt)) return;
+    if (chargeState.need > 0) {
+      chargeState.need = Math.max(0, chargeState.need - amt);
+      if (chargeState.need === 0) {
+        closeCharge();
+        toast('チャージ完了。オリパが引けます');
+        return;
+      }
+    }
+    renderChargeModal();
+  };
+  if (bi.level === 'over') {
+    askConfirm('今月の課金上限（' + yen(bi.budget) + '）を ' + yen(bi.over) +
+      ' 超えます。それでもチャージしますか？', go);
+  } else {
+    go();
+  }
+}
+
+/* ---------------- draw action ---------------- */
+function doDraw(n) {
+  var set = curSet();
+  if (!set) return;
+  if (leftOf(set) < n) {
+    sfxDeny();
+    toast('残り口数が足りません');
+    return;
+  }
+  rollMonth();
+  var cost = Math.max(0, num(set.price, 0)) * n;
+  if (state.wallet.points < cost) {
+    sfxDeny();
+    openCharge({
+      need: cost - state.wallet.points,
+      reason: n + '口引くには ' + fmt(cost) + 'pt 必要です（所持 ' + fmt(state.wallet.points) + 'pt）'
+    });
+    return;
+  }
+  var got = rollDraw(set, n);
+  if (!got) {
+    sfxDeny();
+    toast('引けるカードがありません');
+    return;
+  }
+  if (cost > 0) {
+    state.wallet.points = Math.max(0, state.wallet.points - cost);
+    state.wallet.spent += cost;
+  }
+  state.history.push({
+    t: Date.now(),
+    setId: set.id,
+    setName: set.emoji + ' ' + set.name,
+    price: set.price,
+    cost: cost,
+    cards: clone(got)
+  });
+  if (state.history.length > 400) state.history = state.history.slice(-400);
+  var entry = state.history[state.history.length - 1];
+  save();
+
+  // 先に画面を更新（ステージを閉じたときの差分をなくす）
+  renderDraw();
+  renderChips();
+  renderHistory();
+
+  showStage(got, set, entry);
+}
+
+/* ---------------- events ---------------- */
+function bindEvents() {
+  // tabs
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    (function (t) {
+      t.addEventListener('click', function () { switchTab(t.getAttribute('data-tab')); });
+    })(tabs[i]);
+  }
+
+  // mute
+  if (elMute) elMute.addEventListener('click', toggleMute);
+  if (elStageMute) elStageMute.addEventListener('click', toggleMute);
+
+  // draw buttons
+  elDrawBtns.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.dbtn') : null;
+    if (!b || b.disabled) return;
+    doDraw(parseInt(b.getAttribute('data-n'), 10) || 1);
+  });
+  if (elRefill) elRefill.addEventListener('click', function () { resetSet(true); });
+
+  // pack open: tap / swipe up
+  var startY = 0, moved = false;
+  elPackWrap.addEventListener('touchstart', function (e) {
+    if (!e.touches || !e.touches[0]) return;
+    startY = e.touches[0].clientY; moved = false;
+  }, { passive: true });
+  elPackWrap.addEventListener('touchmove', function (e) {
+    if (!e.touches || !e.touches[0]) return;
+    if (startY - e.touches[0].clientY > 14) moved = true;
+  }, { passive: true });
+  elPackWrap.addEventListener('touchend', function (e) {
+    var ty = startY;
+    if (e.changedTouches && e.changedTouches[0]) ty = e.changedTouches[0].clientY;
+    var dy = startY - ty;
+    if (moved || dy > 18) { openPack(); }
+  });
+  elPackWrap.addEventListener('click', function () { openPack(); });
+
+  if (elFlipAll) elFlipAll.addEventListener('click', function () {
+    if (elFlipAll.getAttribute('data-mode') === 'redeem') {
+      if (stageState.entry) { applyAll(stageState.entry, 'redeem'); renderResult(); }
+    } else {
+      flipAll();
+    }
+  });
+  if (elClose) elClose.addEventListener('click', closeStage);
+
+  // stage close btn in top? (noop)
+  // manage : set chips
+  elSetChips.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.chip') : null;
+    if (!b) return;
+    state.current = b.getAttribute('data-set');
+    save();
+    renderAll();
+  });
+
+  if (elNewSet) elNewSet.addEventListener('click', newSet);
+  if (elResetSet) elResetSet.addEventListener('click', function () { resetSet(true); });
+  if (elDelSet) elDelSet.addEventListener('click', delSet);
+
+  // editor fields
+  elEdEmoji.addEventListener('input', function () {
+    var s = curSet(); if (!s) return;
+    s.emoji = elEdEmoji.value.slice(0, 4) || '🎴';
+    save(); renderChips();
+  });
+  elEdName.addEventListener('input', function () {
+    var s = curSet(); if (!s) return;
+    s.name = elEdName.value;
+    save(); renderChips();
+  });
+  elEdPrice.addEventListener('input', function () {
+    var s = curSet(); if (!s) return;
+    s.price = Math.max(0, num(elEdPrice.value, 0));
+    save(); renderChips();
+  });
+
+  // item list delegation
+  elItemList.addEventListener('input', function (e) {
+    var el = e.target;
+    var row = el.closest ? el.closest('.item') : null;
+    if (!row) return;
+    var it = findItem(curSet(), row.getAttribute('data-id'));
+    if (!it) return;
+    var f = el.getAttribute('data-f');
+    if (f === 'name') {
+      it.name = el.value;
+      save();
+    } else if (f === 'count') {
+      var v = Math.max(0, Math.min(999, num(el.value, 0)));
+      it.count = v;
+      if (it.left > v) it.left = v;
+      var lb = row.querySelector ? row.querySelector('.left-badge b') : null;
+      if (lb) lb.textContent = String(it.left);
+      save();
+      renderItemsFoot();
+    } else if (f === 'value') {
+      it.value = Math.max(0, Math.min(999999, num(el.value, 0)));
+      save();
+    }
+  });
+  elItemList.addEventListener('change', function (e) {
+    var el = e.target;
+    var row = el.closest ? el.closest('.item') : null;
+    if (!row) return;
+    var it = findItem(curSet(), row.getAttribute('data-id'));
+    if (!it) return;
+    var f = el.getAttribute('data-f');
+    if (f === 'rarity') {
+      it.rarity = el.value;
+      if (!it.rank || it.rank === '白') it.rank = RANK_DEFAULT[it.rarity] || '白';
+      save(); renderItems(); renderDraw();
+    } else if (f === 'rank') {
+      it.rank = el.value;
+      save(); renderItems(); renderDraw();
+    } else if (f === 'count' || f === 'name' || f === 'value') {
+      save(); renderItems(); renderDraw();
+    }
+  });
+  elItemList.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-del]') : null;
+    if (!b) return;
+    var row = b.closest('.item');
+    var s = curSet();
+    if (!s || !row) return;
+    var id = row.getAttribute('data-id');
+    s.items = s.items.filter(function (x) { return x.id !== id; });
+    save(); renderItems(); renderDraw();
+  });
+
+  if (elAddItem) elAddItem.addEventListener('click', function () {
+    var s = curSet(); if (!s) return;
+    s.items.push(mkItem('新しいカード', 'RR', 1, '白', 100));
+    save(); renderItems(); renderDraw();
+    var list = elItemList.querySelectorAll ? elItemList.querySelectorAll('.item') : [];
+    var last = list[list.length - 1];
+    if (last && last.scrollIntoView) last.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+
+  if (elClearHist) elClearHist.addEventListener('click', function () {
+    askConfirm('履歴をすべて削除します。よろしいですか？', function () {
+      state.history = [];
+      save(); renderHistory(); renderAll();
+      toast('履歴を削除しました');
+    });
+  });
+
+  // modal
+  elModalOk.addEventListener('click', function () {
+    var cb = modalCb;
+    closeModal();
+    if (cb) cb();
+  });
+  elModalCancel.addEventListener('click', closeModal);
+  elModal.addEventListener('click', function (e) {
+    if (e.target === elModal) closeModal();
+  });
+
+  // keyboard (desktop convenience)
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (!elModal.hidden) { closeModal(); return; }
+      if (elChargeModal && !elChargeModal.hidden) { closeCharge(); return; }
+      if (!elStage.hidden) { closeStage(); }
+    }
+  });
+
+  /* ---- wallet / charge ---- */
+  if (elWalletChip) elWalletChip.addEventListener('click', function () { openCharge(); });
+  if (elChargeBtn2) elChargeBtn2.addEventListener('click', function () { openCharge(); });
+  if (elCmClose) elCmClose.addEventListener('click', closeCharge);
+  if (elChargeModal) elChargeModal.addEventListener('click', function (e) {
+    if (e.target === elChargeModal) closeCharge();
+  });
+  if (elCmAmounts) elCmAmounts.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.amt') : null;
+    if (!b) return;
+    chargeState.sel = parseInt(b.getAttribute('data-amt'), 10) || 0;
+    if (elCmInput) elCmInput.value = '';
+    renderChargeModal();
+    sfxFlip();
+  });
+  if (elCmInput) elCmInput.addEventListener('input', function () {
+    chargeState.sel = Math.max(0, Math.floor(num(elCmInput.value, 0)));
+    var els = elCmAmounts && elCmAmounts.querySelectorAll ? elCmAmounts.querySelectorAll('.amt') : [];
+    for (var i = 0; i < els.length; i++) els[i].className = 'amt';
+    renderChargeSel();
+  });
+  if (elCmInputGo) elCmInputGo.addEventListener('click', function () {
+    chargeState.sel = Math.max(0, Math.floor(num(elCmInput.value, 0)));
+    commitCharge();
+  });
+  if (elCmGo) elCmGo.addEventListener('click', commitCharge);
+
+  if (elEdBudget) elEdBudget.addEventListener('input', function () {
+    state.wallet.budget = Math.max(0, Math.floor(num(elEdBudget.value, 0)));
+    save();
+    renderWallet();
+  });
+  if (elResetHist) elResetHist.addEventListener('click', function () {
+    askConfirm('引いた履歴と課金履歴を削除します。所持ptと累計課金額は残ります。', function () {
+      state.history = [];
+      state.charges = [];
+      save(); renderAll(); toast('履歴をリセットしました');
+    });
+  });
+  if (elClearCharges) elClearCharges.addEventListener('click', function () {
+    askConfirm('課金履歴を削除します（累計課金額は残ります）。', function () {
+      state.charges = [];
+      save(); renderAll(); toast('課金履歴を削除しました');
+    });
+  });
+  if (elResetAll) elResetAll.addEventListener('click', function () {
+    askConfirm('全データを初期化して最初の状態に戻します。よろしいですか？', function () {
+      state = defaultState();
+      state.wallet.monthKey = monthKeyNow();
+      save(); renderAll(); toast('初期化しました');
+    });
+  });
+
+  // 履歴：未選択カードの一括還元/キープ
+  if (elHList) elHList.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-hred],[data-hkeep]') : null;
+    if (!b) return;
+    var isRed = b.hasAttribute('data-hred');
+    var idx = parseInt(b.getAttribute(isRed ? 'data-hred' : 'data-hkeep'), 10);
+    var ent = state.history[idx];
+    if (!ent) return;
+    applyAll(ent, isRed ? 'redeem' : 'keep');
+  });
+
+  // 結果パネル：還元 / キープ
+  if (elResList) elResList.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.seg button') : null;
+    if (!b || b.disabled) return;
+    var row = b.closest('.res-row');
+    if (!row) return;
+    var i = parseInt(row.getAttribute('data-i'), 10);
+    var c = stageState.entry && stageState.entry.cards[i];
+    if (!c) return;
+    var st = b.getAttribute('data-st');
+    var v = num(c.value, 0);
+    setCardState(c, st);
+    renderResult();
+    renderWallet();
+    toast(st === 'redeem' ? '+' + fmt(v) + 'pt 還元しました' : 'キープしました');
+  });
+
+  window.addEventListener('resize', confettiResize);
+  window.addEventListener('orientationchange', function () { setTimeout(confettiResize, 220); });
+}
+
+function newSet() {
+  var s = {
+    id: uid(),
+    name: 'マイオリパ',
+    emoji: '🎴',
+    price: 500,
+    items: [mkItem('当たりカード', 'SAR', 1, '虹', 1500), mkItem('通常カード', 'RR', 9, '白', 100)]
+  };
+  state.sets.push(s);
+  state.current = s.id;
+  save();
+  renderAll();
+  switchTab('manage');
+  toast('新しいオリパを作成しました');
+}
+
+function resetSet(ask) {
+  var s = curSet(); if (!s) return;
+  var go = function () {
+    for (var i = 0; i < s.items.length; i++) s.items[i].left = s.items[i].count;
+    save(); renderAll();
+    toast('全口数を補充しました');
+  };
+  if (ask && leftOf(s) !== totalOf(s)) {
+    askConfirm('「' + s.name + '」を全口数補充します。引いた分の残数がリセットされます。', go);
+  } else {
+    go();
+  }
+}
+
+function delSet() {
+  var s = curSet(); if (!s) return;
+  if (state.sets.length <= 1) { toast('最後の1つは削除できません'); return; }
+  askConfirm('「' + s.name + '」を削除します。よろしいですか？', function () {
+    state.sets = state.sets.filter(function (x) { return x.id !== s.id; });
+    state.current = state.sets[0].id;
+    save(); renderAll();
+    toast('オリパを削除しました');
+  });
+}
+
+/* ---------------- init ---------------- */
+function init() {
+  elMute = $('muteBtn');
+  elHeroEmoji = $('heroEmoji'); elHeroName = $('heroName'); elHeroPrice = $('heroPrice');
+  elStatLeft = $('statLeft'); elStatTotal = $('statTotal'); elStatBar = $('statBar'); elStatHit = $('statHit');
+  elHitLine = $('hitLine'); elDrawBtns = $('drawBtns'); elSoldOut = $('soldOut'); elRefill = $('refillBtn');
+  elSetChips = $('setChips'); elNewSet = $('newSetBtn'); elResetSet = $('resetSetBtn'); elDelSet = $('delSetBtn');
+  elEdEmoji = $('edEmoji'); elEdName = $('edName'); elEdPrice = $('edPrice');
+  elItemList = $('itemList'); elItemsFoot = $('itemsFoot'); elAddItem = $('addItemBtn');
+  elHDraws = $('hDraws'); elHHits = $('hHits'); elHRate = $('hRate');
+  elHRarity = $('hRarity'); elHList = $('hList'); elClearHist = $('clearHistBtn');
+  elSCharged = $('sCharged'); elSSpent = $('sSpent'); elSValue = $('sValue'); elSRate = $('sRate');
+  elChargeList = $('chargeList'); elClearCharges = $('clearChargesBtn');
+  elHistBudget = $('histBudget'); elMgrBudget = $('mgrBudget'); elEdBudget = $('edBudget');
+  elResetHist = $('resetHistBtn'); elResetAll = $('resetAllBtn');
+  elHdPts = $('hdPts'); elHdCharged = $('hdCharged'); elWalletChip = $('walletChip'); elWalletLine = $('walletLine');
+  elChargeModal = $('chargeModal'); elCmClose = $('cmClose'); elCmPts = $('cmPts'); elCmTotal = $('cmTotal');
+  elCmNeed = $('cmNeed'); elCmAmounts = $('cmAmounts'); elCmInput = $('cmInput');
+  elCmInputGo = $('cmInputGo'); elCmPreview = $('cmPreview'); elCmGo = $('cmGo'); elChargeBtn2 = $('chargeBtn2');
+  elStagePts = $('stagePts'); elResult = $('result'); elResList = $('resList'); elResTotal = $('resTotal');
+  elStage = $('stage'); elStagePackName = $('stagePackName'); elStageHit = $('stageHit');
+  elStageMute = $('stageMuteBtn'); elAura = $('aura'); elAuraSpin = $('auraSpin');
+  elPackWrap = $('packWrap'); elPack = $('pack'); elPackTop = $('packTop'); elPackFlash = $('packFlash');
+  elPkEmoji = $('pkEmoji'); elPkName = $('pkName'); elPkPrice = $('pkPrice'); elPackHint = $('packHint');
+  elHand = $('hand'); elStageActions = $('stageActions'); elFlipAll = $('flipAllBtn'); elClose = $('closeBtn');
+  elModal = $('modal'); elModalText = $('modalText'); elModalOk = $('modalOk'); elModalCancel = $('modalCancel');
+  elToast = $('toast'); elConfetti = $('confetti');
+
+  state = load();
+  rollMonth();
+  confettiInit();
+  bindEvents();
+  renderAll();
+  if (memOnly) toast('この環境では保存できません（メモリ上で動作）');
+
+  // exposed for testing / debugging
+  window.__oripa = {
+    getState: function () { return state; },
+    draw: doDraw,
+    open: openPack,
+    flipAll: flipAll,
+    close: closeStage,
+    leftOf: leftOf,
+    totalOf: totalOf,
+    hitLeftOf: hitLeftOf,
+    auraOf: auraOf,
+    rollDraw: rollDraw,
+    drawOne: drawOne,
+    resetSet: resetSet,
+    newSet: newSet,
+    delSet: delSet,
+    curSet: curSet,
+    save: save,
+    charge: addCharge,
+    openCharge: openCharge,
+    commitCharge: commitCharge,
+    setCardState: setCardState,
+    applyAll: applyAll,
+    budgetInfo: budgetInfo,
+    allValue: allValue,
+    recoveryRate: recoveryRate,
+    renderResult: renderResult,
+    reset: function () { state = defaultState(); save(); renderAll(); }
+  };
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
