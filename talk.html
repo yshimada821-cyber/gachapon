@@ -2004,7 +2004,12 @@ audio{display:none;}
     var desc = $("#notifDesc");
     if (desc) desc.textContent = t.desc;
     var act = $("#btnNotifAction");
-    if (act) act.textContent = t.cta;
+    if (act) {
+      act.textContent = t.cta;
+      // 自分ではONにできない状態（ブロック済み・iOSで未追加・非対応）は手順を見せる
+      var cannotEnable = (st === "denied" || st === "ios" || st === "unsupported");
+      act.style.display = cannotEnable ? "none" : "block";
+    }
     var guide = $("#notifGuide");
     if (guide) guide.classList.toggle("on", st === "ios" || st === "denied" || st === "unsupported");
   }
