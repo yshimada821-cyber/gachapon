@@ -3,26 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0a14">
+<meta name="theme-color" content="#ff9f43">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="トーク">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="1on1トーク">
 <meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./talk-icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./talk-icon-180.png">
 <meta name="description" content="ふたりだけの1対1トーク。ルームを作ってURLを送るだけ。LINE風チャット（既読つき）と無料音声通話がブラウザだけで使えます。">
 <title>1対1トーク &amp; 通話 | ふたりだけのルーム</title>
 <style>
 :root{
-  --ink:#f6f4ff;
-  --ink-soft:#b7b1d4;
-  --ink-mute:#7b7499;
-  --panel:rgba(255,255,255,.055);
-  --panel-2:rgba(255,255,255,.095);
-  --line:rgba(255,255,255,.10);
-  --green:#06c755;
-  --green-d:#04a847;
-  --green-l:#3ddc97;
-  --red:#ff4d5e;
-  --chat-top:#a8c0d6;
-  --chat-bot:#8fa8bd;
+  /* オレンジ基調。文字は濃いウォームブラウンでコントラストを確保 */
+  --ink:#3b2210;
+  --ink-soft:#6d4526;
+  --ink-mute:#946b41;
+  --panel:rgba(255,255,255,.62);
+  --panel-2:rgba(255,255,255,.80);
+  --line:rgba(150,80,20,.16);
+  --green:#f2761f;        /* アクセント（オレンジ） */
+  --green-d:#d95f0e;
+  --green-l:#ffb066;
+  --red:#e5484d;
+  --chat-top:#ffe8d0;
+  --chat-bot:#ffd9b5;
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -32,11 +39,11 @@ body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
   color:var(--ink);
-  background:#0b0a14;
+  background:#ff9f43;
   background-image:
-    radial-gradient(120% 60% at 50% -12%, #14321f 0%, #10231a 40%, #0b0a14 78%),
-    radial-gradient(70% 50% at 100% 100%, rgba(6,199,85,.16), transparent 65%),
-    radial-gradient(70% 50% at 0% 92%, rgba(61,220,151,.12), transparent 65%);
+    radial-gradient(120% 60% at 50% -12%, #ffe1bc 0%, #ffb56c 42%, #ff9f43 78%),
+    radial-gradient(70% 50% at 100% 100%, rgba(255,255,255,.34), transparent 65%),
+    radial-gradient(70% 50% at 0% 92%, rgba(255,240,222,.45), transparent 65%);
   background-attachment:fixed;
   -webkit-font-smoothing:antialiased;
   overscroll-behavior-y:none;
@@ -45,8 +52,8 @@ body::before{
   content:"";
   position:fixed; inset:0;
   background:
-    radial-gradient(38% 26% at 18% 8%, rgba(61,220,151,.18), transparent 70%),
-    radial-gradient(34% 24% at 84% 18%, rgba(6,199,85,.12), transparent 70%);
+    radial-gradient(38% 26% at 18% 8%, rgba(255,255,255,.32), transparent 70%),
+    radial-gradient(34% 24% at 84% 18%, rgba(255,213,170,.32), transparent 70%);
   pointer-events:none; z-index:0;
 }
 button{font-family:inherit;}
@@ -75,9 +82,9 @@ input,textarea{font-family:inherit;}
   border-radius:24px;
   display:grid;place-items:center;
   font-size:36px;
-  background:linear-gradient(150deg,#0f3d28,#0b2419);
-  border:1px solid rgba(61,220,151,.28);
-  box-shadow:0 18px 44px -18px rgba(6,199,85,.55), inset 0 1px 0 rgba(255,255,255,.08);
+  background:linear-gradient(150deg,#fff7ef,#ffe3c2);
+  border:1px solid rgba(210,110,30,.28);
+  box-shadow:0 18px 40px -18px rgba(190,95,10,.55), inset 0 1px 0 rgba(255,255,255,.75);
 }
 .brand h1{
   margin:0 0 10px;
@@ -102,8 +109,8 @@ input,textarea{font-family:inherit;}
 .fl:not(:first-child){margin-top:16px;}
 .inp{
   width:100%;
-  background:rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.78);
+  border:1px solid rgba(150,80,20,.20);
   border-radius:14px;
   color:var(--ink);
   padding:14px 15px;
@@ -111,10 +118,10 @@ input,textarea{font-family:inherit;}
   outline:none;
   transition:border-color .15s, background .15s;
 }
-.inp::placeholder{color:#6d6788;}
-.inp:focus{border-color:rgba(61,220,151,.6);background:rgba(0,0,0,.38);}
+.inp::placeholder{color:#b08a63;}
+.inp:focus{border-color:rgba(242,118,31,.62);background:#fffdfa;}
 .inp.code{letter-spacing:.34em;text-transform:uppercase;font-weight:700;font-size:19px;}
-.inp.code::placeholder{letter-spacing:.2em;font-weight:500;font-size:15px;color:#5f5a79;}
+.inp.code::placeholder{letter-spacing:.2em;font-weight:500;font-size:15px;color:#b08a63;}
 .btn{
   display:block;width:100%;
   margin-top:16px;
@@ -129,10 +136,10 @@ input,textarea{font-family:inherit;}
 }
 .btn:active{transform:scale(.985);}
 .btn.primary{
-  background:linear-gradient(160deg,#0ad35c,#04a847);
-  color:#03210f;
+  background:linear-gradient(160deg,#ffa04d,#ef6d10);
+  color:#fff;
   border:none;
-  box-shadow:0 16px 34px -16px rgba(6,199,85,.85);
+  box-shadow:0 16px 34px -16px rgba(200,95,10,.70);
 }
 .btn:disabled{opacity:.55;cursor:default;}
 .or{
@@ -144,13 +151,13 @@ input,textarea{font-family:inherit;}
   text-align:center;color:var(--ink-mute);font-size:12px;line-height:1.8;margin-top:8px;
 }
 .hint{
-  margin:10px 2px 0;font-size:12px;line-height:1.6;color:#8fe0b6;
+  margin:10px 2px 0;font-size:12px;line-height:1.6;color:#a85207;
   display:none;
 }
 .hint.on{display:block;}
 .join-status{
   display:none;margin:12px 2px 0;text-align:center;
-  font-size:12.5px;color:#8fe0b6;line-height:1.6;
+  font-size:12.5px;color:#a85207;line-height:1.6;
 }
 .join-status.on{display:block;}
 
@@ -169,26 +176,26 @@ input,textarea{font-family:inherit;}
   font-size:22px;margin:12px 0 20px;font-weight:800;
 }
 .codebox{
-  background:linear-gradient(160deg,rgba(6,199,85,.16),rgba(255,255,255,.04));
-  border:1px solid rgba(61,220,151,.34);
+  background:linear-gradient(160deg,rgba(255,255,255,.72),rgba(255,236,214,.55));
+  border:1px solid rgba(226,120,30,.30);
   border-radius:24px;
   padding:22px 18px;
   text-align:center;
   margin-bottom:16px;
 }
-.codelabel{font-size:11px;letter-spacing:.22em;color:#8fe0b6;font-weight:700;}
+.codelabel{font-size:11px;letter-spacing:.22em;color:#b1540a;font-weight:700;}
 .codeval{
   font-size:38px;font-weight:800;letter-spacing:.18em;
   margin:10px 0 2px;
   font-variant-numeric:tabular-nums;
-  text-shadow:0 0 26px rgba(6,199,85,.45);
+  text-shadow:0 2px 18px rgba(226,120,30,.30);
 }
 .pinval{
   font-size:13px;color:var(--ink-soft);margin-top:6px;
   display:none;
 }
 .pinval.on{display:block;}
-.pinval b{color:#ffd76a;letter-spacing:.22em;font-size:16px;}
+.pinval b{color:#a8410a;letter-spacing:.22em;font-size:16px;}
 .url{
   font-size:12px;color:var(--ink-mute);
   word-break:break-all;text-align:center;line-height:1.6;
@@ -201,15 +208,15 @@ input,textarea{font-family:inherit;}
 }
 .pulse{
   width:10px;height:10px;border-radius:50%;
-  background:var(--green-l);
-  box-shadow:0 0 0 0 rgba(61,220,151,.55);
+  background:var(--green);
+  box-shadow:0 0 0 0 rgba(242,118,31,.45);
   animation:pulse 1.8s infinite;
   flex:0 0 auto;
 }
 @keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(61,220,151,.55);}
-  70%{box-shadow:0 0 0 14px rgba(61,220,151,0);}
-  100%{box-shadow:0 0 0 0 rgba(61,220,151,0);}
+  0%{box-shadow:0 0 0 0 rgba(242,118,31,.45);}
+  70%{box-shadow:0 0 0 14px rgba(242,118,31,0);}
+  100%{box-shadow:0 0 0 0 rgba(242,118,31,0);}
 }
 .tips{
   margin-top:30px;padding:16px;
@@ -221,8 +228,8 @@ input,textarea{font-family:inherit;}
 /* ---------------- chat ---------------- */
 #scrChat{
   height:var(--vvh,100dvh);
-  background:#0b0a14;
-  color:#15181c;
+  background:#ffe8d0;
+  color:#3b2210;
 }
 .chat-shell{
   width:100%;max-width:520px;height:100%;
@@ -235,22 +242,22 @@ input,textarea{font-family:inherit;}
 .chat-top{
   display:flex;align-items:center;gap:8px;
   padding:calc(var(--safe-t) + 8px) 10px 8px;
-  background:#fff;
-  box-shadow:0 1px 0 rgba(0,0,0,.10);
+  background:#fffaf3;
+  box-shadow:0 1px 0 rgba(150,80,20,.14);
   position:relative;z-index:3;
   flex:0 0 auto;
 }
 .icon-btn{
   width:38px;height:38px;flex:0 0 auto;
   border:none;border-radius:12px;background:transparent;
-  color:#1b2026;font-size:22px;line-height:1;
+  color:#4a2a12;font-size:22px;line-height:1;
   display:grid;place-items:center;cursor:pointer;
 }
 .who{flex:1;min-width:0;display:flex;align-items:center;gap:10px;}
 .ava{
   width:36px;height:36px;border-radius:50%;flex:0 0 auto;
   display:grid;place-items:center;
-  background:linear-gradient(145deg,#06c755,#0a9d6a);
+  background:linear-gradient(145deg,#ff9d43,#e2600f);
   color:#fff;font-weight:800;font-size:15px;
 }
 .who .t{min-width:0;}
@@ -259,34 +266,34 @@ input,textarea{font-family:inherit;}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .pstat{
-  font-size:11px;color:#78838e;margin-top:3px;
+  font-size:11px;color:#8a6440;margin-top:3px;
   display:flex;align-items:center;gap:5px;
 }
-.dotl{width:6px;height:6px;border-radius:50%;background:#c2cad2;}
-.pstat.on{color:#0a9c52;}
-.pstat.on .dotl{background:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.16);}
+.dotl{width:6px;height:6px;border-radius:50%;background:#e2c6a8;}
+.pstat.on{color:#a8410a;}
+.pstat.on .dotl{background:#f2761f;box-shadow:0 0 0 3px rgba(242,118,31,.20);}
 .callbtn{
   width:42px;height:42px;flex:0 0 auto;
   border:none;border-radius:50%;
-  background:linear-gradient(150deg,#0ad35c,#04a847);
+  background:linear-gradient(150deg,#ffa04d,#e2600f);
   color:#fff;font-size:18px;
   display:grid;place-items:center;cursor:pointer;
-  box-shadow:0 8px 18px -8px rgba(6,199,85,.9);
+  box-shadow:0 8px 18px -8px rgba(200,95,10,.62);
 }
-.callbtn:disabled{background:#cdd5dd;box-shadow:none;}
+.callbtn:disabled{background:#ecd3bd;box-shadow:none;}
 
 .callbar{
   display:none;align-items:center;gap:9px;
   padding:9px 12px;
-  background:#0d2a1c;
-  color:#d9ffe9;
+  background:#4a2810;
+  color:#ffe9d2;
   font-size:13px;font-weight:600;
   flex:0 0 auto;
   z-index:2;
 }
 .callbar.on{display:flex;}
 .callbar .cdot{
-  width:8px;height:8px;border-radius:50%;background:#3ddc97;
+  width:8px;height:8px;border-radius:50%;background:#ffb066;
   animation:blink 1.4s infinite;flex:0 0 auto;
 }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
@@ -301,7 +308,7 @@ input,textarea{font-family:inherit;}
   font-size:13px;font-weight:700;padding:8px 12px;
 }
 .cbtn.muted{background:#ffd76a;color:#3d2c00;}
-.cbtn.end{background:#ff4d5e;color:#fff;}
+.cbtn.end{background:#e5484d;color:#fff;}
 
 .msgs{
   flex:1;min-height:0;
@@ -313,25 +320,25 @@ input,textarea{font-family:inherit;}
 .empty{
   height:100%;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:6px;
-  color:rgba(255,255,255,.9);font-size:14px;font-weight:700;
-  text-shadow:0 1px 3px rgba(20,40,60,.3);
+  color:rgba(74,42,18,.85);font-size:14px;font-weight:700;
+  text-shadow:0 1px 2px rgba(255,255,255,.45);
 }
 .empty .emptylock{font-size:34px;margin-bottom:6px;opacity:.9;}
 .empty .emptysub{font-size:12px;font-weight:500;opacity:.8;}
 .daydiv{
   text-align:center;margin:16px 0 12px;
-  font-size:11px;color:#37536b;
+  font-size:11px;color:#8a6440;
 }
 .daydiv span{
-  background:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.72);
   padding:3px 12px;border-radius:20px;
 }
 .sys{
-  text-align:center;font-size:11.5px;color:#33505f;
+  text-align:center;font-size:11.5px;color:#7a5228;
   margin:10px 24px;line-height:1.6;
 }
 .sys span{
-  background:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.66);
   border-radius:14px;padding:5px 12px;display:inline-block;
 }
 .row{
@@ -344,7 +351,7 @@ input,textarea{font-family:inherit;}
 .pava{
   width:32px;height:32px;border-radius:50%;flex:0 0 auto;
   display:grid;place-items:center;
-  background:linear-gradient(145deg,#8d9fb2,#6f8499);
+  background:linear-gradient(145deg,#ffa95c,#e2600f);
   color:#fff;font-weight:800;font-size:13px;
 }
 .pava.ghost{visibility:hidden;}
@@ -354,33 +361,33 @@ input,textarea{font-family:inherit;}
   font-size:15px;line-height:1.55;
   word-break:break-word;
   white-space:normal;
-  box-shadow:0 1px 2px rgba(20,40,60,.14);
+  box-shadow:0 1px 2px rgba(150,80,20,.16);
 }
 .bubble.me{
-  background:#06c755;color:#fff;
+  background:linear-gradient(160deg,#f2761f,#cf560a);color:#fff;
   border-radius:16px 4px 16px 16px;
 }
 .bubble.peer{
-  background:#fff;color:#1a1e22;
+  background:#fff;color:#3b2210;
   border-radius:4px 16px 16px 16px;
 }
 .meta{
-  font-size:10px;color:#3b5568;flex:0 0 auto;
+  font-size:10px;color:#8a6440;flex:0 0 auto;
   padding-bottom:3px;white-space:nowrap;
 }
-.meta.rd{color:#0c6e33;font-weight:700;}
+.meta.rd{color:#a8410a;font-weight:700;}
 
 .typing{
   display:none;align-items:center;gap:7px;
   padding:4px 16px 6px;
-  font-size:12px;color:#2c4759;
+  font-size:12px;color:#7a5228;
   background:linear-gradient(180deg,var(--chat-bot),var(--chat-bot));
   flex:0 0 auto;
 }
 .typing.on{display:flex;}
 .tdots{display:inline-flex;gap:3px;}
 .tdots i{
-  width:5px;height:5px;border-radius:50%;background:#2c4759;opacity:.45;
+  width:5px;height:5px;border-radius:50%;background:#7a5228;opacity:.45;
   animation:td 1.1s infinite;
 }
 .tdots i:nth-child(2){animation-delay:.16s;}
@@ -390,30 +397,30 @@ input,textarea{font-family:inherit;}
 .composer{
   display:flex;align-items:flex-end;gap:8px;
   padding:8px 10px calc(var(--safe-b) + 8px);
-  background:#eef1f4;
-  border-top:1px solid rgba(0,0,0,.07);
+  background:#fff4e8;
+  border-top:1px solid rgba(150,80,20,.12);
   flex:0 0 auto;
 }
 #input{
   flex:1;min-height:44px;max-height:118px;
   resize:none;border:none;outline:none;
   border-radius:22px;
-  background:#fff;color:#15181c;
+  background:#fffdfa;color:#3b2210;
   padding:11px 16px;
   font-size:16px;line-height:1.4;
-  box-shadow:0 1px 3px rgba(20,40,60,.10);
+  box-shadow:0 1px 3px rgba(150,80,20,.12);
   -webkit-appearance:none;
 }
-#input::placeholder{color:#9aa5af;}
+#input::placeholder{color:#b08a63;}
 .send{
   width:46px;height:46px;flex:0 0 auto;
   border:none;border-radius:50%;
-  background:#06c755;color:#fff;font-size:19px;
+  background:linear-gradient(160deg,#ff9d43,#ef6d10);color:#fff;font-size:19px;
   display:grid;place-items:center;cursor:pointer;
   transition:transform .12s, background .15s;
 }
 .send:active{transform:scale(.94);}
-.send:disabled{background:#c4cdd5;}
+.send:disabled{background:#e8d0b8;}
 .offline-note{
   display:none;text-align:center;font-size:11.5px;
   color:#7d4a12;background:#ffe9bd;
@@ -422,7 +429,7 @@ input,textarea{font-family:inherit;}
 .offline-note.on{display:block;}
 
 /* ---------------- full / error ---------------- */
-#scrFull{background:#0b0a14;align-items:center;justify-content:center;padding:24px;}
+#scrFull{background:#ff9f43;align-items:center;justify-content:center;padding:24px;}
 .full-wrap{
   position:relative;z-index:1;
   width:100%;max-width:420px;text-align:center;
@@ -437,7 +444,7 @@ input,textarea{font-family:inherit;}
   display:none;
   align-items:center;justify-content:center;
   padding:24px;
-  background:rgba(6,12,9,.72);
+  background:rgba(58,28,8,.55);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
 }
@@ -447,25 +454,87 @@ input,textarea{font-family:inherit;}
   border-radius:28px;
   padding:30px 22px 24px;
   text-align:center;
-  background:linear-gradient(170deg,#12351f,#0a1a12);
-  border:1px solid rgba(61,220,151,.3);
-  box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+  background:linear-gradient(170deg,#fff6ec,#ffe4c8);
+  border:1px solid rgba(226,120,30,.35);
+  box-shadow:0 30px 70px -30px rgba(120,55,5,.55);
   animation:incin .25s ease-out;
 }
 @keyframes incin{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
 .inc-ava{
   width:82px;height:82px;margin:0 auto 16px;
   border-radius:50%;display:grid;place-items:center;font-size:36px;
-  background:linear-gradient(150deg,#0ad35c,#046a2d);
-  box-shadow:0 0 0 0 rgba(6,199,85,.5);
+  background:linear-gradient(150deg,#ffa04d,#e2600f);
+  box-shadow:0 0 0 0 rgba(242,118,31,.45);
   animation:pulse 1.8s infinite;
 }
 .inc-name{font-size:21px;font-weight:800;margin-bottom:6px;}
 .inc-sub{font-size:13px;color:var(--ink-soft);margin-bottom:26px;}
 .inc-btns{display:flex;gap:12px;}
 .inc-btns .btn{margin:0;padding:15px 10px;font-size:15px;}
-.inc-btns .reject{background:rgba(255,77,94,.16);border:1px solid rgba(255,77,94,.4);color:#ffb3ba;}
-.inc-btns .accept{background:linear-gradient(160deg,#0ad35c,#04a847);color:#03210f;border:none;}
+.inc-btns .reject{background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.38);color:#b32b32;}
+.inc-btns .accept{background:linear-gradient(160deg,#ffa04d,#ef6d10);color:#fff;border:none;}
+
+/* ---------------- 通知（PWA） ---------------- */
+.notif-bar{
+  width:100%;display:flex;align-items:center;gap:11px;
+  margin-top:14px;padding:13px 15px;
+  border:1px solid var(--line);border-radius:18px;
+  background:var(--panel);color:var(--ink);
+  font-family:inherit;font-size:13px;text-align:left;cursor:pointer;
+}
+.notif-bar .nb-ico{font-size:18px;flex:0 0 auto;}
+.notif-bar .nb-t{flex:1;min-width:0;}
+.notif-bar .nb-t b{display:block;font-size:13.5px;font-weight:800;}
+.notif-bar .nb-t span{display:block;color:var(--ink-mute);font-size:11.5px;margin-top:2px;}
+.notif-bar .nb-cta{
+  flex:0 0 auto;font-size:11.5px;font-weight:800;
+  color:#fff;background:linear-gradient(160deg,#ffa04d,#ef6d10);
+  padding:7px 12px;border-radius:999px;white-space:nowrap;
+}
+.notif-bar.on{background:rgba(255,255,255,.9);border-color:rgba(226,120,30,.45);}
+.notif-bar.on .nb-cta{background:rgba(242,118,31,.14);color:#a8410a;}
+
+.bellbtn{
+  position:relative;width:42px;height:42px;flex:0 0 auto;
+  border:none;border-radius:50%;background:#fff4e8;color:#a85a1a;
+  font-size:17px;line-height:1;display:grid;place-items:center;cursor:pointer;
+}
+.bellbtn.on{background:linear-gradient(150deg,#ffa04d,#e2600f);color:#fff;}
+.bellbtn i{
+  position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;
+  background:#ff4d5e;border:1.5px solid #fff;display:none;
+}
+.bellbtn.on i{display:block;}
+
+.sheet-ov{align-items:flex-end;padding:0;}
+.sheet{
+  width:100%;max-width:520px;margin:0 auto;
+  background:linear-gradient(175deg,#fff8f0,#ffeedb);
+  border-top:1px solid rgba(150,80,20,.16);
+  border-radius:24px 24px 0 0;
+  padding:22px 20px calc(var(--safe-b) + 22px);
+  animation:sheetin .22s ease-out;
+}
+@keyframes sheetin{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+.sheet h3{margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.sheet .st{
+  display:inline-flex;align-items:center;gap:7px;
+  margin:12px 0 0;padding:7px 13px;border-radius:999px;
+  font-size:12.5px;font-weight:800;
+  background:rgba(229,72,77,.10);color:#b32b32;border:1px solid rgba(229,72,77,.28);
+}
+.sheet .st.ok{background:rgba(31,127,82,.12);color:#1c6b46;border-color:rgba(31,127,82,.32);}
+.sheet .st.warn{background:rgba(255,190,70,.22);color:#8a5a00;border-color:rgba(200,140,0,.32);}
+.sheet p{margin:11px 0 0;font-size:12.5px;line-height:1.85;color:var(--ink-soft);}
+.sheet .guide{
+  margin-top:13px;padding:13px 14px;border-radius:14px;
+  background:rgba(255,255,255,.62);border:1px solid var(--line);
+  font-size:12px;line-height:1.9;color:var(--ink-soft);display:none;
+}
+.sheet .guide.on{display:block;}
+.sheet .guide b{color:var(--ink);}
+.sheet .btns{margin-top:16px;display:flex;flex-direction:column;gap:9px;}
+.sheet .note{margin-top:12px;font-size:11px;line-height:1.7;color:var(--ink-mute);}
 
 /* ---------------- toast ---------------- */
 .toast{
@@ -473,9 +542,9 @@ input,textarea{font-family:inherit;}
   transform:translate(-50%,14px);
   max-width:82vw;
   padding:11px 18px;border-radius:14px;
-  background:rgba(14,20,17,.94);
-  border:1px solid rgba(255,255,255,.12);
-  color:#eaffef;
+  background:rgba(58,28,8,.94);
+  border:1px solid rgba(255,255,255,.16);
+  color:#fff4e8;
   font-size:13px;line-height:1.5;text-align:center;
   opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
   z-index:120;
@@ -518,6 +587,12 @@ audio{display:none;}
       <button class="btn" id="btnJoin">参加する</button>
       <p class="join-status" id="joinStatus">ルームに接続しています…</p>
     </div>
+
+    <button class="notif-bar" id="notifBar" type="button">
+      <span class="nb-ico">🔔</span>
+      <span class="nb-t"><b>通知</b><span id="notifBarState">未設定</span></span>
+      <span class="nb-cta" id="notifBarCta">ONにする</span>
+    </button>
 
     <p class="foot">同じルームに入れるのは2人まで。<br>3人目は「満室」としてブロックされます。</p>
   </div>
@@ -567,6 +642,7 @@ audio{display:none;}
         <div class="pstat" id="chatStat"><span class="dotl"></span><span id="chatStatText">接続中…</span></div>
       </div>
     </div>
+    <button class="bellbtn" id="btnBell" aria-label="通知の設定" aria-haspopup="dialog">🔔<i></i></button>
     <button class="callbtn" id="btnCall" aria-label="音声通話" disabled>📞</button>
   </div>
 
@@ -618,6 +694,28 @@ audio{display:none;}
 
 <div class="toast" id="toast"></div>
 <audio id="remoteAudio" autoplay playsinline></audio>
+
+<!-- ========== NOTIFICATION ========== -->
+<div class="overlay sheet-ov" id="notifSheet" role="dialog" aria-modal="true" aria-labelledby="notifTitle">
+  <div class="sheet">
+    <h3 id="notifTitle">🔔 通知</h3>
+    <div class="st" id="notifState">未設定</div>
+    <p id="notifDesc">アプリを開いたまま別のアプリを見ているときや、画面を消しているときに、新着メッセージと着信をお知らせします。</p>
+    <div class="guide" id="notifGuide">
+      <b>iPhone / iPad の場合</b><br>
+      Safari の共有ボタン →「ホーム画面に追加」でアプリとして入れると通知が使えます（iOS 16.4 以降）。<br>
+      追加したアイコンから開いて、この画面の「通知をONにする」を押してください。<br><br>
+      <b>ON / OFF を変えたいとき</b><br>
+      iPhone：設定 → 通知 →「トーク」<br>
+      Android：Chrome の「サイトの設定」→ 通知
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="btnNotifAction">通知をONにする</button>
+      <button class="btn" id="btnNotifClose">閉じる</button>
+    </div>
+    <p class="note">※ アプリを完全に閉じている間の通知は、別途サーバー（Web Push）が必要です。</p>
+  </div>
+</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onerror="window.__peerjsFailed=true"></script>
 <script>
@@ -763,7 +861,7 @@ audio{display:none;}
       if (n) n.classList.toggle("on", k === name);
     });
     var mt = document.querySelector('meta[name="theme-color"]');
-    if (mt) mt.setAttribute("content", name === "chat" ? "#ffffff" : "#0b0a14");
+    if (mt) mt.setAttribute("content", name === "chat" ? "#fff4e8" : "#ff9f43");
     if (name !== "chat") hideTyping();
     if (name === "chat") { window.scrollTo(0, 0); }
   }
@@ -914,7 +1012,7 @@ audio{display:none;}
         hideTyping();
         renderMsgs();
         if (isViewing()) markRead([S.msgs[S.msgs.length - 1].id]);
-        else ping();
+        else { ping(); notifyMessage(S.msgs[S.msgs.length - 1]); }
         break;
 
       case "read":
@@ -1392,7 +1490,10 @@ audio{display:none;}
   }
 
   document.addEventListener("visibilitychange", function(){
-    if (document.visibilityState === "visible" && S.screen === "chat") flushReads();
+    if (document.visibilityState === "visible") {
+      closeNotifs("talk-");
+      if (S.screen === "chat") flushReads();
+    }
   });
   window.addEventListener("focus", function(){
     if (S.screen === "chat") flushReads();
@@ -1528,6 +1629,8 @@ audio{display:none;}
     var nm = (call.metadata && call.metadata.name) ? String(call.metadata.name).slice(0, 12) : S.peerName;
     $("#incName").textContent = nm || "あいて";
     $("#incoming").classList.add("on");
+    notifyIncoming(nm);
+    try { if (navigator.vibrate) navigator.vibrate([0, 400, 200, 400, 200, 400]); } catch (e) {}
 
     call.on("close", function(){
       if (S.incoming === call && S.callState === "ringing") {
@@ -1555,6 +1658,7 @@ audio{display:none;}
     ensureMic().then(function(stream){
       $("#incoming").classList.remove("on");
       S.incoming = null;
+      closeNotifs("talk-call:");
       try {
         call.answer(stream);
       } catch (e) {
@@ -1585,6 +1689,7 @@ audio{display:none;}
     if (call) { try { call.close(); } catch (e) {} }
     say({ type: "call-reject", reason: "declined" });
     addSystem("着信を拒否しました");
+    closeNotifs("talk-call:");
   }
 
   function onCallRejected(reason){
@@ -1614,6 +1719,7 @@ audio{display:none;}
     try { elAudio.srcObject = null; } catch (e) {}
     stopLocalMic();
     S.callState = "idle";
+    closeNotifs("talk-call:");
 
     if (notify) say({ type: "call-end", dur: Math.floor(dur || 0), reason: reason || "" });
 
@@ -1726,6 +1832,219 @@ audio{display:none;}
     }
   }
 
+  /* ================= 通知（PWA） ================= */
+
+  var MUTE_KEY = "talk:notif-muted";
+  var NOTIF_ICON = "talk-icon-192.png";
+  var swRegPromise = null;
+
+  function notifMuted(){
+    try { return localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { return false; }
+  }
+
+  function setNotifMuted(on){
+    try {
+      if (on) localStorage.setItem(MUTE_KEY, "1");
+      else localStorage.removeItem(MUTE_KEY);
+    } catch (e) { /* 保存できなくても続行 */ }
+  }
+
+  function isStandalone(){
+    try { if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true; } catch (e) {}
+    return window.navigator.standalone === true;
+  }
+
+  function isIOS(){
+    var ua = navigator.userAgent || "";
+    if (/iP(hone|ad|od)/.test(ua)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  }
+
+  function notifSupported(){
+    return ("Notification" in window) || ("serviceWorker" in navigator && "Notification" in window);
+  }
+
+  // 状態: on / muted / default / denied / ios / unsupported
+  function notifState(){
+    if (isIOS() && !isStandalone()) return "ios";
+    if (!("Notification" in window)) return "unsupported";
+    var p = "default";
+    try { p = Notification.permission; } catch (e) { p = "default"; }
+    if (p === "granted") return notifMuted() ? "muted" : "on";
+    if (p === "denied") return "denied";
+    return "default";
+  }
+
+  var NOTIF_TEXT = {
+    on:          { label: "ON", desc: "新着メッセージと着信を通知します。", cta: "ON（タップでOFF）", cls: "ok" },
+    muted:       { label: "OFF（このアプリでOFF）", desc: "通知の許可はありますが、このアプリではOFFにしています。", cta: "ONにする", cls: "warn" },
+    default:     { label: "未設定", desc: "まだ通知を許可していません。「通知をONにする」を押すと、ブラウザが確認を表示します。", cta: "通知をONにする", cls: "" },
+    denied:      { label: "OFF（ブラウザでブロック中）", desc: "ブラウザ側で通知がブロックされています。下の手順で許可し直してください。", cta: "設定方法を見る", cls: "" },
+    ios:         { label: "ホーム画面追加が必要", desc: "iPhone / iPad は、ホーム画面に追加したアプリからのみ通知できます。", cta: "追加のしかたを見る", cls: "warn" },
+    unsupported: { label: "このブラウザは非対応", desc: "このブラウザは通知に対応していません。Safari か Chrome でお試しください。", cta: "くわしく", cls: "" }
+  };
+
+  function renderNotif(){
+    var st = notifState(), t = NOTIF_TEXT[st] || NOTIF_TEXT.default;
+    var bar = $("#notifBar");
+    if (bar) {
+      bar.classList.toggle("on", st === "on");
+      $("#notifBarState").textContent = t.label;
+      $("#notifBarCta").textContent = st === "on" ? "ON" : (st === "ios" ? "くわしく" : "ONにする");
+    }
+    var bell = $("#btnBell");
+    if (bell) bell.classList.toggle("on", st === "on");
+
+    var badge = $("#notifState");
+    if (badge) {
+      badge.textContent = t.label;
+      badge.className = "st" + (t.cls ? " " + t.cls : "");
+    }
+    var desc = $("#notifDesc");
+    if (desc) desc.textContent = t.desc;
+    var act = $("#btnNotifAction");
+    if (act) act.textContent = t.cta;
+    var guide = $("#notifGuide");
+    if (guide) guide.classList.toggle("on", st === "ios" || st === "denied" || st === "unsupported");
+  }
+
+  function openNotifSheet(){
+    renderNotif();
+    $("#notifSheet").classList.add("on");
+  }
+
+  function closeNotifSheet(){
+    $("#notifSheet").classList.remove("on");
+  }
+
+  function onNotifPermission(res){
+    renderNotif();
+    if (res === "granted") {
+      setNotifMuted(false);
+      renderNotif();
+      toast("通知をONにしました");
+      if (isIOS() && isStandalone()) toast("通知をONにしました", 2000);
+    } else if (res === "denied") {
+      toast("通知がブロックされました。ブラウザの設定から許可してください", 4600);
+    } else {
+      toast("通知はONになりませんでした");
+    }
+  }
+
+  function requestNotifPermission(){
+    try {
+      var ret = Notification.requestPermission(onNotifPermission); // 旧Safari
+      if (ret && typeof ret.then === "function") ret.then(onNotifPermission).catch(function(){});
+    } catch (e) {
+      toast("このブラウザでは通知をONにできません", 4000);
+    }
+  }
+
+  function notifAction(){
+    var st = notifState();
+    if (st === "on") {
+      setNotifMuted(true); renderNotif();
+      toast("通知をOFFにしました");
+      return;
+    }
+    if (st === "muted") {
+      setNotifMuted(false); renderNotif();
+      toast("通知をONにしました");
+      return;
+    }
+    if (st === "ios" || st === "denied" || st === "unsupported") {
+      $("#notifGuide").classList.add("on");
+      return;
+    }
+    requestNotifPermission();
+  }
+
+  /* --- 通知を出す --- */
+
+  function notifData(kind, tag){
+    return {
+      url: S.code ? shareUrl(S.code) : location.pathname,
+      kind: kind,
+      tag: tag
+    };
+  }
+
+  function showNotif(title, body, tag, kind){
+    if (notifState() !== "on") return;
+    if (document.visibilityState === "visible") return;
+
+    var text = String(body == null ? "" : body);
+    if (text.length > 120) text = text.slice(0, 119) + "…";
+    var opts = {
+      body: text,
+      tag: tag,
+      renotify: true,
+      icon: NOTIF_ICON,
+      badge: NOTIF_ICON,
+      vibrate: [70, 40, 70],
+      data: notifData(kind, tag)
+    };
+
+    try { if (navigator.vibrate) navigator.vibrate(opts.vibrate); } catch (e) {}
+
+    var fallback = function(){
+      try { new Notification(title, { body: opts.body, tag: opts.tag, icon: opts.icon }); } catch (e) {}
+    };
+    var viaReg = function(reg){
+      if (reg && typeof reg.showNotification === "function") {
+        try {
+          var p = reg.showNotification(title, opts);
+          if (p && typeof p.catch === "function") p.catch(fallback);
+        } catch (e) { fallback(); }
+      } else {
+        fallback();
+      }
+    };
+
+    if (swRegPromise) swRegPromise.then(viaReg).catch(fallback);
+    else if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(viaReg).catch(fallback);
+    } else fallback();
+  }
+
+  function closeNotifs(prefix){
+    if (!swRegPromise) return;
+    swRegPromise.then(function(reg){
+      if (!reg || typeof reg.getNotifications !== "function") return;
+      reg.getNotifications().then(function(list){
+        list.forEach(function(n){
+          var tg = n.tag || "";
+          if (!prefix || tg.indexOf(prefix) === 0) { try { n.close(); } catch (e) {} }
+        });
+      }).catch(function(){});
+    }).catch(function(){});
+  }
+
+  function notifyMessage(m){
+    if (!m) return;
+    var who = S.peerName || "あいて";
+    var body = (m.type === "sys") ? m.text : (m.text || "メッセージが届きました");
+    showNotif(who, body, "talk-msg:" + (S.code || "room"), "msg");
+  }
+
+  function notifyIncoming(name){
+    var who = name || S.peerName || "あいて";
+    showNotif("📞 着信中", who + " から音声通話", "talk-call:" + (S.code || "room"), "call");
+  }
+
+  function registerSW(){
+    if (!("serviceWorker" in navigator)) return;
+    try {
+      swRegPromise = navigator.serviceWorker.register("./sw.js", { scope: "./" })
+        .then(function(reg){ renderNotif(); return reg; })
+        .catch(function(){ return null; });
+      navigator.serviceWorker.addEventListener("message", function(ev){
+        var d = ev.data;
+        if (d && d.type === "notification-click" && S.screen === "chat") flushReads();
+      });
+    } catch (e) { /* 未対応環境は静かに続行 */ }
+  }
+
   /* ================= UI bindings ================= */
 
   $("#btnCreate").addEventListener("click", createRoom);
@@ -1794,6 +2113,18 @@ audio{display:none;}
   $("#btnAccept").addEventListener("click", acceptCall);
   $("#btnReject").addEventListener("click", rejectCall);
 
+  $("#btnBell").addEventListener("click", openNotifSheet);
+  $("#notifBar").addEventListener("click", openNotifSheet);
+  $("#btnNotifAction").addEventListener("click", notifAction);
+  $("#btnNotifClose").addEventListener("click", closeNotifSheet);
+  $("#notifSheet").addEventListener("click", function(e){
+    if (e.target === this) closeNotifSheet();
+  });
+  document.addEventListener("visibilitychange", function(){
+    // 通知の許可状態が外から変わることがあるので表示を更新し直す
+    if (document.visibilityState === "visible") renderNotif();
+  });
+
   window.addEventListener("beforeunload", function(){
     if (S.conn && S.conn.open) { try { S.conn.send({ type: "bye" }); } catch (e) {} }
   });
@@ -1818,6 +2149,9 @@ audio{display:none;}
       if (saved) { S.myName = saved; $("#nameInput").value = saved; }
     } catch (e) {}
     autoGrow();
+    renderNotif();
+    if (document.readyState === "complete") registerSW();
+    else window.addEventListener("load", registerSW);
 
     var q = new URLSearchParams(location.search);
     var room = normalizeCode(q.get("room") || "");
